@@ -46,7 +46,7 @@ frontend/components/
   ```bash
   npx shadcn@latest add <componente>
   ```
-- **Adaptação:** Após a inclusão via comando, adeque as cores e raios aos tokens de `globals.css` (Rose Gold & Nude Chic).
+- **Adaptação:** Após a inclusão via comando, adeque as cores e raios aos tokens de `globals.css` (**Violet Luminary**).
 - Todo componente novo **nasce como átomo ou molécula** e deve ser incluído na vitrine de componentes da página de desenvolvimento/showcase para validação visual antes de ser incorporado a fluxos produtivos.
 
 ---
@@ -56,7 +56,7 @@ frontend/components/
 ### 3.1. Proibição de Cores Hardcoded
 - Cores, raios de curvatura, sombras e famílias tipográficas só podem ser declarados em `frontend/app/globals.css`.
 - O comando `npm run lint` executa a validação de tokens (`lint:tokens`).
-- Exemplo incorreto: `<div className="bg-[#C5836E] text-black">` ❌
+- Exemplo incorreto: `<div className="bg-[#7C3AED] text-black">` ❌
 - Exemplo correto: `<div className="bg-primary text-on-surface">` ou usando classes mapeadas para as variáveis CSS ✅
 
 ### 3.2. Suporte Obrigatório a Temas (Light e Dark)
@@ -78,5 +78,5 @@ Toda listagem (seja de agendamentos, clientes, serviços ou histórico químico 
 
 ## 5. Regras de Interface e Ergonomia
 
-- **Um botão primário por folha:** Cada tela ou modal deve possuir apenas uma ação primária em destaque (pílula em tom Rose Gold). Ações secundárias devem usar estilo ghost ou outline sutil.
-- **Ações Destrutivas (Lixeira):** O botão de exclusão/lixeira deve permanecer **neutro em repouso** (cinza/marrom suave) e acender em **vermelho apenas no estado `:hover` ou foco**, evitando sobrecarregar a interface com sinais de alerta desnecessários.
+- **Um botão primário por folha:** Cada tela ou modal deve possuir apenas uma ação primária em destaque (pílula em tom Violet Luminary `#7C3AED`). Ações secundárias devem usar estilo ghost ou outline sutil.
+- **Ações Destrutivas (Lixeira):** O botão de exclusão/lixeira deve permanecer **neutro em repouso** (cinza/ametista suave) e acender em **vermelho apenas no estado `:hover` ou foco**, evitando sobrecarregar a interface com sinais de alerta desnecessários.

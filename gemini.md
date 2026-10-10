@@ -11,7 +11,7 @@ Para especificações detalhadas, consulte sempre a pasta [`docs/`](docs/) e o [
 O **Camilo Studio** é uma plataforma dedicada de gestão para ateliês de beleza e estética de alto padrão, combinando sofisticação editorial com eficiência operacional.
 
 - **Design de Referência (Stitch):** [Stitch Project 7569087254048681171](https://stitch.withgoogle.com/projects/7569087254048681171)
-- **Tema Visual:** *Rose Gold & Nude Chic* (Playfair Display + Plus Jakarta Sans).
+- **Tema Visual:** *Violet Luminary* (Inter + Geist, tons de violeta elétrico `#7C3AED` e ametista profundo).
 - **Modelo de Negócio:** Aplicação Single-tenant dedicada à operação do Camilo Studio.
 
 ---
@@ -99,7 +99,7 @@ camilo-studio/
 | Assunto | Arquivo de Destino |
 | :--- | :--- |
 | Requisitos detalhados de cada tela e regras de negócio | `Obsidian/Projetos/Camilo Studio/Requisitos/` |
-| Cores exatas, tipografia Playfair/Jakarta e tokens | [`docs/design-system.md`](docs/design-system.md) |
+| Cores exatas, tipografia Inter/Geist e tokens Violet Luminary | [`docs/design-system.md`](docs/design-system.md) |
 | Atomic design, estrutura Next.js e regras de lint | [`docs/frontend.md`](docs/frontend.md) |
 | Estrutura Django, modelos e endpoints REST | [`docs/backend.md`](docs/backend.md) |
 | Convenção de commits, changelog e exemplos práticos | [`docs/git-workflow.md`](docs/git-workflow.md) |

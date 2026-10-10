@@ -42,7 +42,7 @@ Camilo Studio
   2. Ao selecionar um agendamento pendente, aciona o modal de confirmação.
   3. O modal exibe a mensagem personalizada pronta com os dados do cliente, horário, serviços e profissional.
   4. Um clique no botão de ação principal abre a conversa no WhatsApp via link direto (`wa.me`) e atualiza o status para *Confirmado*.
-  5. Após o atendimento, gera-se o comprovante digital formatado no padrão Rose Gold para envio ou impressão.
+  5. Após o atendimento, gera-se o comprovante digital formatado no padrão Violet Luminary para envio ou impressão.
 
 ### 2.2. Módulo de Clientes & Ficha de Fórmulas
 - **Objetivo:** Centralizar o cadastro e o histórico técnico das clientes do ateliê.

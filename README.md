@@ -2,7 +2,7 @@
 
 > Sistema de gestão integrada para ateliês de beleza e estética de alto padrão, unindo sofisticação visual e controle operacional de agenda, clientes, equipe e fichas técnicas químicas.
 
-Projetado sob a identidade visual **Rose Gold & Nude Chic** ([Stitch 7569087254048681171](https://stitch.withgoogle.com/projects/7569087254048681171)).
+Projetado sob a identidade visual **Violet Luminary** ([Stitch 7569087254048681171](https://stitch.withgoogle.com/projects/7569087254048681171)).
 
 ---
 

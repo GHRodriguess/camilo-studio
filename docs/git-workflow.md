@@ -78,7 +78,7 @@ Os escopos refletem as fronteiras do domínio e das camadas do monorepo:
 - `feat(ui): inclui estado vazio para a listagem de serviços`
 
 ### ❌ Exemplos Incorretos
-- `refactor(ui): muda a cor do botão para rose gold` ❌ *(Mudou o que o usuário vê, deve ser `feat` ou `fix`)*
+- `refactor(ui): muda a cor do botão para violeta` ❌ *(Mudou o que o usuário vê, deve ser `feat` ou `fix`)*
 - `feat(cliente): cria tela de perfil` ❌ *(Escopo no singular; o correto é `clientes`)*
 - `fix(agendamentos): corrigindo erro de fuso horário` ❌ *(Verbo no gerúndio; usar `corrige`)*
 - `Add new component` ❌ *(Em inglês e sem seguir a convenção `tipo(escopo): descrição`)*
