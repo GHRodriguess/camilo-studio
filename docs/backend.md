@@ -10,7 +10,14 @@ Este documento estabelece as diretrizes de desenvolvimento, arquitetura e conven
 - **Framework:** Django 5.x & Django REST Framework (DRF)
 - **Gerenciador de Dependências:** `venv` padrão com `requirements.txt`
 - **Banco de Dados:** SQLite para o ciclo inicial de desenvolvimento local (configurado com caminho relativo para portabilidade)
+- **Envio de E-mail (SMTP):** Configuração nativa do Django (`EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'`), com credenciais e remetente extraídos estritamente de variáveis de ambiente no `.env`
 - **CORS & Segurança:** `django-cors-headers` configurado para comunicação com o frontend Next.js
+
+### 1.1. Regra de Criação de Arquivos e Apps
+> [!IMPORTANT]
+> **Use sempre os comandos oficiais da CLI:** Nunca crie a estrutura de projeto ou de apps manualmente criando pastas e arquivos do zero.
+> - Inicializar o projeto: `django-admin startproject camilo_core .`
+> - Criar um novo app: `python manage.py startapp <nome_do_app> apps/<nome_do_app>`
 
 ---
 
@@ -36,7 +43,14 @@ backend/
 
 ## 3. Principais Modelos de Dados
 
-### 3.1. `clientes`
+### 3.1. `usuarios` (Auth & Acessos)
+- Modelo customizado de usuário ou extensão com `perfil` (`admin` ou `profissional`).
+- Campos: `email` (identificador único de login), `nome`, `deve_redefinir_senha` (booleano, `True` ao ser criado com senha aleatória), `is_staff`, `is_active`.
+- **Criação de Conta Admin:** Script de inicialização / management command (`python manage.py setup_admin`) para criar a conta inicial de administrador.
+- **Criação de Contas pelo Admin:** O Admin cadastra membros da equipe; o backend gera uma senha aleatória segura, salva com hash, define `deve_redefinir_senha = True` e envia o e-mail de boas-vindas com a senha temporária e o link de primeiro login.
+- **Redefinição de Senha:** Suporte nativo com geração de token de uso único por e-mail para o fluxo de "Esqueci minha senha" e endpoint dedicado para troca forçada no primeiro acesso.
+
+### 3.2. `clientes`
 - `nome`, `telefone` (normalizado com DDD), `email`, `data_nascimento`, `observacoes_alergias`, `criado_em`.
 
 ### 3.2. `servicos`

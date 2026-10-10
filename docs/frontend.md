@@ -9,6 +9,7 @@ Este documento detalha a arquitetura, convenções e regras de validação do c�
 - **Framework:** Next.js 16 (App Router)
 - **Linguagem:** TypeScript (strict mode ativado)
 - **Estilização:** Tailwind CSS acoplado a variáveis CSS puras em `frontend/app/globals.css`
+- **Biblioteca Base de Componentes:** shadcn/ui adicionado estritamente via CLI oficial (`npx shadcn@latest add <component>`) para moléculas/átomos, adaptando seus tokens para o design system do projeto
 - **Ícones:** Lucide React
 - **Gerenciador de Pacotes:** `npm`
 
@@ -40,8 +41,13 @@ frontend/components/
    - Exemplos: `DashboardLayout`, `MobileAppShell`.
    - **Regra:** Definem áreas de header, drawer, conteúdo e rodapé sem vincular dados concretos.
 
-### 2.2. Ciclo de Vida de Novos Componentes
-Todo componente novo **nasce como átomo ou molécula** e deve ser incluído na vitrine de componentes da página de desenvolvimento/showcase para validação visual antes de ser incorporado a fluxos produtivos.
+### 2.2. Ciclo de Vida de Novos Componentes e shadcn/ui
+- **Criação via CLI:** Nunca crie componentes do shadcn/ui manualmente do zero. Sempre utilize o comando oficial:
+  ```bash
+  npx shadcn@latest add <componente>
+  ```
+- **Adaptação:** Após a inclusão via comando, adeque as cores e raios aos tokens de `globals.css` (Rose Gold & Nude Chic).
+- Todo componente novo **nasce como átomo ou molécula** e deve ser incluído na vitrine de componentes da página de desenvolvimento/showcase para validação visual antes de ser incorporado a fluxos produtivos.
 
 ---
 

@@ -79,6 +79,18 @@ camilo-studio/
   - Banco de dados inicial: SQLite para desenvolvimento ágil local.
   - Serializers e ViewSets desacoplados e tipados.
   - Arquitetura de notificações preparada para envio direto via `wa.me` no frontend e registro de log/mensageria assíncrona no backend.
+  - **Envio de E-mail:** Configuração via SMTP do Django com remetente e credenciais mantidas exclusivamente em variáveis de ambiente no `.env`.
+  - **Fluxo de Usuários & Senhas:** Conta admin inicial criada via script/comando; criação de novos usuários com senha aleatória segura enviada por e-mail; redefinição de senha obrigatória no 1º login; páginas dedicadas para troca forçada e "Esqueci minha senha".
+
+### 3.4. Regras Operacionais para o Agente de IA
+- **Proibido criar arquivos de setup na mão:**
+  - Para criar o projeto Django ou novos apps, execute sempre os comandos oficiais (`django-admin startproject`, `python manage.py startapp`).
+  - Para adicionar componentes/moléculas de interface, execute sempre o CLI do shadcn (`npx shadcn@latest add <componente>`) e depois adapte os tokens aos de `globals.css`.
+  - Nunca invente ou crie arquivos de configuração desnecessários. Prefira sempre comandos canônicos e ferramentas oficiais.
+- **Consulta Obrigatória ao Obsidian em caso de dúvidas:**
+  - Sempre que surgirem dúvidas sobre requisitos funcionais, regras de negócio, fluxos de telas ou campos de formulários, o agente deve **obrigatoriamente consultar os arquivos de requisitos no cofre do Obsidian**:
+    `/Users/gabrielrodrigues/Library/Mobile Documents/com~apple~CloudDocs/GABRIEL RODRIGUES/Obsidian/Projetos/Camilo Studio/Requisitos/`
+  - A pasta `Requisitos/` reside exclusivamente no Obsidian (nunca deve ser copiada para a pasta do código). O agente tem permissão de leitura sobre esse cofre para tirar dúvidas e conferir especificações detalhadas de cada tela.
 
 ---
 
@@ -86,6 +98,7 @@ camilo-studio/
 
 | Assunto | Arquivo de Destino |
 | :--- | :--- |
+| Requisitos detalhados de cada tela e regras de negócio | `Obsidian/Projetos/Camilo Studio/Requisitos/` |
 | Cores exatas, tipografia Playfair/Jakarta e tokens | [`docs/design-system.md`](docs/design-system.md) |
 | Atomic design, estrutura Next.js e regras de lint | [`docs/frontend.md`](docs/frontend.md) |
 | Estrutura Django, modelos e endpoints REST | [`docs/backend.md`](docs/backend.md) |
