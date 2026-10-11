@@ -26,7 +26,7 @@ class AgendamentoViewSet(viewsets.ModelViewSet):
         cliente_nome = agendamento.cliente.nome
         data_formatada = agendamento.data_hora_inicio.strftime('%d/%m/%Y')
         horario_formatado = agendamento.data_hora_inicio.strftime('%H:%M')
-        profissional_nome = agendamento.profissional.nome
+        profissional_nome = agendamento.profissional.nome if agendamento.profissional else "Equipe Camilo Studio"
         servicos_nomes = ", ".join(s.nome for s in agendamento.servicos.all()) or "Serviços Camilo Studio"
         valor_str = f"{agendamento.valor_total:.2f}".replace('.', ',')
 

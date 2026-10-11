@@ -31,8 +31,7 @@ class AgendamentoTests(TestCase):
         )
         self.prof = Profissional.objects.create(
             nome='Gabriel Camilo',
-            cargo='Colorista Master',
-            cadeira='Bancada 01'
+            cargo='Colorista Master'
         )
         self.servico = Servico.objects.create(
             nome='Corte Editorial',

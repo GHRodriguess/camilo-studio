@@ -7,7 +7,7 @@ import {
   ArrowLeft,
   Plus,
 } from 'lucide-react';
-import { api, Cliente, Profissional, Servico } from '@/lib/api';
+import { api, Cliente, Servico } from '@/lib/api';
 import { LoadingState } from '@/components/atoms/LoadingState';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -17,13 +17,11 @@ import { Textarea } from '@/components/ui/textarea';
 export default function NovoAgendamentoPage() {
   const router = useRouter();
   const [clientes, setClientes] = useState<Cliente[]>([]);
-  const [equipe, setEquipe] = useState<Profissional[]>([]);
   const [servicos, setServicos] = useState<Servico[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Form State
   const [clienteId, setClienteId] = useState<number | ''>('');
-  const [profissionalId, setProfissionalId] = useState<number | ''>('');
   const [servicosSelecionados, setServicosSelecionados] = useState<number[]>([]);
   const [dataStr, setDataStr] = useState('');
   const [horaInicioStr, setHoraInicioStr] = useState('10:00');
@@ -35,13 +33,11 @@ export default function NovoAgendamentoPage() {
     async function carregarDados() {
       setDataStr(new Date().toISOString().split('T')[0]);
       try {
-        const [cData, eData, sData] = await Promise.all([
+        const [cData, sData] = await Promise.all([
           api.getClientes(),
-          api.getEquipe(),
           api.getServicos(),
         ]);
         setClientes(Array.isArray(cData) ? cData : cData.results || []);
-        setEquipe(Array.isArray(eData) ? eData : eData.results || []);
         setServicos(Array.isArray(sData) ? sData : sData.results || []);
       } catch (err) {
         console.error('Erro ao carregar dados para o agendamento:', err);
@@ -87,10 +83,6 @@ export default function NovoAgendamentoPage() {
       setError('Selecione uma cliente.');
       return;
     }
-    if (!profissionalId) {
-      setError('Selecione o profissional responsável.');
-      return;
-    }
     if (servicosSelecionados.length === 0) {
       setError('Selecione pelo menos um serviço.');
       return;
@@ -105,7 +97,7 @@ export default function NovoAgendamentoPage() {
 
       await api.createAgendamento({
         cliente: Number(clienteId),
-        profissional: Number(profissionalId),
+        profissional: null,
         servicos: servicosSelecionados,
         data_hora_inicio: dataHoraInicio,
         data_hora_fim: dataHoraFim,
@@ -150,7 +142,7 @@ export default function NovoAgendamentoPage() {
             Marcar Agendamento
           </h1>
           <p className="text-xs text-on-surface-variant mt-1">
-            Selecione a cliente, o especialista e monte o combo de procedimentos.
+            Selecione a cliente, monte o combo de procedimentos e defina a data e horário do atendimento.
           </p>
         </div>
 
@@ -188,24 +180,12 @@ export default function NovoAgendamentoPage() {
             </select>
           </div>
 
-          {/* SELEÇÃO DE PROFISSIONAL */}
-          <div className="space-y-1.5">
-            <Label className="text-xs font-medium text-on-surface-variant">
-              Profissional Responsável
-            </Label>
-            <select
-              value={profissionalId}
-              onChange={(e) => setProfissionalId(e.target.value ? Number(e.target.value) : '')}
-              required
-              className="w-full h-12 px-4 rounded-full border border-outline-variant bg-surface-container-lowest text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
-            >
-              <option value="">Selecione o profissional...</option>
-              {equipe.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.nome} — {p.cargo} ({p.cadeira})
-                </option>
-              ))}
-            </select>
+          {/* ATENDIMENTO EM EQUIPE UNIFICADA */}
+          <div className="p-3.5 rounded-2xl bg-surface-container-low border border-outline-variant/40 flex items-center gap-2.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-primary shrink-0" />
+            <p className="text-xs text-on-surface font-medium">
+              Equipe Camilo Studio <span className="text-on-surface-variant font-normal">(as profissionais atendem de forma conjunta)</span>
+            </p>
           </div>
 
           {/* SELEÇÃO DE SERVIÇOS (COMBO COM SOMA DINÂMICA) */}

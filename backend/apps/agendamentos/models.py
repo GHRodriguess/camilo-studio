@@ -16,7 +16,9 @@ class Agendamento(models.Model):
     cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE, related_name='agendamentos', verbose_name='Cliente')
     profissional = models.ForeignKey(
         Profissional,
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
         related_name='agendamentos',
         verbose_name='Profissional'
     )
@@ -37,4 +39,5 @@ class Agendamento(models.Model):
         ordering = ['data_hora_inicio']
 
     def __str__(self):
-        return f"{self.cliente.nome} com {self.profissional.nome} ({self.data_hora_inicio.strftime('%d/%m/%Y %H:%M')})"
+        prof_nome = self.profissional.nome if self.profissional else 'Equipe Camilo Studio'
+        return f"{self.cliente.nome} com {prof_nome} ({self.data_hora_inicio.strftime('%d/%m/%Y %H:%M')})"

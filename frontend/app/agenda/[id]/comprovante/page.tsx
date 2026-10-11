@@ -147,13 +147,13 @@ export default function ComprovanteAgendamentoPage({
 
           <div className="space-y-1 text-right">
             <span className="text-[10px] uppercase tracking-wider text-on-surface-variant font-semibold">
-              Especialista
+              Atendimento
             </span>
             <p className="font-bold text-on-surface text-sm">
-              {agendamento.profissional_detalhes?.nome}
+              {agendamento.profissional_detalhes?.nome || 'Equipe Camilo Studio'}
             </p>
-            <p className="text-on-surface-variant">
-              {agendamento.profissional_detalhes?.cadeira}
+            <p className="text-on-surface-variant text-[11px]">
+              {agendamento.profissional_detalhes?.cargo || 'Ateliê Principal'}
             </p>
           </div>
         </div>

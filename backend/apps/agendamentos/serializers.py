@@ -2,6 +2,7 @@ import urllib.parse
 from rest_framework import serializers
 from .models import Agendamento
 from apps.clientes.serializers import ClienteSerializer
+from apps.equipe.models import Profissional
 from apps.equipe.serializers import ProfissionalSerializer
 from apps.servicos.serializers import ServicoSerializer
 from apps.servicos.models import Servico
@@ -10,6 +11,7 @@ from apps.notificacoes.models import ConfiguracaoAtelie, NotificacaoWhatsApp
 
 class AgendamentoSerializer(serializers.ModelSerializer):
     cliente_detalhes = ClienteSerializer(source='cliente', read_only=True)
+    profissional = serializers.PrimaryKeyRelatedField(queryset=Profissional.objects.all(), required=False, allow_null=True)
     profissional_detalhes = ProfissionalSerializer(source='profissional', read_only=True)
     servicos_detalhes = ServicoSerializer(source='servicos', many=True, read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)

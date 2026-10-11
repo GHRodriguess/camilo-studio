@@ -11,6 +11,7 @@ import {
   Sparkles,
   ExternalLink,
   Receipt,
+  Clock,
 } from 'lucide-react';
 import { api, Agendamento } from '@/lib/api';
 import { LoadingState } from '@/components/atoms/LoadingState';
@@ -245,37 +246,42 @@ export default function AgendaPage() {
             return (
               <div
                 key={ag.id}
-                className="p-5 sm:p-6 rounded-3xl bg-surface-container-lowest border border-outline-variant/60 shadow-sm hover:shadow-md hover:border-primary/40 transition-all flex flex-col md:flex-row md:items-center justify-between gap-5"
+                className="p-5 sm:p-6 rounded-3xl bg-surface-container-lowest border border-outline-variant/60 shadow-sm hover:shadow-md hover:border-primary/40 transition-all flex flex-col gap-4"
               >
-                {/* Informações da Esquerda: Horário e Cliente */}
-                <div className="flex items-start gap-4">
-                  {/* Bloco de Horário */}
-                  <div className="flex flex-col items-center justify-center w-20 py-2.5 px-2 rounded-2xl bg-surface-container-low border border-outline-variant/40 shrink-0 text-center">
-                    <span className="text-[10px] uppercase font-bold text-primary tracking-wider">
-                      {dataFormatada}
+                {/* Linha Superior: Data, Horário e Status */}
+                <div className="flex flex-wrap items-center justify-between gap-2.5 pb-3 border-b border-outline-variant/40">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container text-xs font-semibold text-primary uppercase tracking-wider">
+                      <CalendarDays className="w-3.5 h-3.5 text-primary shrink-0" />
+                      <span>{dataFormatada}</span>
                     </span>
-                    <span className="text-sm font-bold text-on-surface font-mono mt-0.5">
-                      {dataInicio.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                    </span>
-                    <span className="text-[10px] text-on-surface-variant font-mono">
-                      até {dataFim.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-low border border-outline-variant/40 text-xs font-mono font-medium text-on-surface">
+                      <Clock className="w-3.5 h-3.5 text-on-surface-variant shrink-0" />
+                      <span>
+                        {dataInicio.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} às {dataFim.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                      </span>
                     </span>
                   </div>
 
-                  {/* Cliente e Profissional */}
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="text-base font-bold text-on-surface font-heading">
-                        {ag.cliente_detalhes?.nome || 'Cliente'}
-                      </h3>
-                      {getStatusBadge(ag.status)}
-                    </div>
+                  {getStatusBadge(ag.status)}
+                </div>
+
+                {/* Linha Principal: Informações do Atendimento e Ações */}
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                  {/* Informações da Cliente e Procedimentos */}
+                  <div className="space-y-1.5 min-w-0 flex-1">
+                    <h3 className="text-base sm:text-lg font-bold text-on-surface font-heading truncate">
+                      {ag.cliente_detalhes?.nome || 'Cliente'}
+                    </h3>
 
                     <p className="text-xs text-on-surface-variant flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full" style={{ backgroundColor: ag.profissional_detalhes?.cor_hex || '#7C3AED' }} />
-                      <span>{ag.profissional_detalhes?.nome}</span>
-                      <span className="text-on-surface-variant/60">•</span>
-                      <span className="font-mono text-[11px]">{ag.profissional_detalhes?.cadeira}</span>
+                      <span
+                        className="w-2 h-2 rounded-full shrink-0"
+                        style={{ backgroundColor: ag.profissional_detalhes?.cor_hex || '#7C3AED' }}
+                      />
+                      <span className="font-medium text-on-surface">
+                        {ag.profissional_detalhes?.nome || 'Equipe Camilo Studio'}
+                      </span>
                     </p>
 
                     {/* Serviços */}
@@ -283,7 +289,7 @@ export default function AgendaPage() {
                       {ag.servicos_detalhes?.map((serv) => (
                         <span
                           key={serv.id}
-                          className="px-2.5 py-0.5 rounded-full text-[10px] bg-surface-container text-on-surface-variant font-medium"
+                          className="px-2.5 py-0.5 rounded-full text-[11px] bg-surface-container text-on-surface-variant font-medium"
                         >
                           {serv.nome}
                         </span>
@@ -291,45 +297,45 @@ export default function AgendaPage() {
                     </div>
 
                     {ag.observacoes && (
-                      <p className="text-[11px] text-on-surface-variant italic pt-1">
+                      <p className="text-xs text-on-surface-variant italic pt-0.5">
                         Nota: {ag.observacoes}
                       </p>
                     )}
                   </div>
-                </div>
 
-                {/* Ações da Direita: Preço, WhatsApp e Comprovante */}
-                <div className="flex flex-row md:flex-col items-center md:items-end justify-between md:justify-center gap-3 pt-3 md:pt-0 border-t md:border-t-0 border-outline-variant/40 shrink-0">
-                  <div className="text-left md:text-right">
-                    <p className="text-[10px] uppercase tracking-wider text-on-surface-variant font-semibold">
-                      Total
-                    </p>
-                    <p className="text-lg font-bold text-primary font-heading">
-                      R$ {Number(ag.valor_total).toFixed(2).replace('.', ',')}
-                    </p>
-                  </div>
+                  {/* Preço e Botões de Ação (100% responsivo) */}
+                  <div className="flex flex-col sm:flex-row lg:flex-col items-start sm:items-center lg:items-end justify-between gap-3 pt-3 lg:pt-0 border-t lg:border-t-0 border-outline-variant/40 shrink-0">
+                    <div className="text-left lg:text-right">
+                      <p className="text-[10px] uppercase tracking-wider text-on-surface-variant font-semibold">
+                        Total
+                      </p>
+                      <p className="text-lg sm:text-xl font-bold text-primary font-heading">
+                        R$ {Number(ag.valor_total).toFixed(2).replace('.', ',')}
+                      </p>
+                    </div>
 
-                  <div className="flex items-center gap-2">
-                    {/* Botão Confirmação WhatsApp */}
-                    {ag.status !== 'confirmado' && (
-                      <Button
-                        size="sm"
-                        onClick={() => abrirModalWhatsapp(ag.id)}
-                        className="rounded-full h-9 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs shadow-sm gap-1.5 cursor-pointer"
+                    <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full sm:w-auto">
+                      {/* Botão Confirmação WhatsApp */}
+                      {ag.status !== 'confirmado' && (
+                        <Button
+                          size="sm"
+                          onClick={() => abrirModalWhatsapp(ag.id)}
+                          className="flex-1 sm:flex-initial rounded-full h-9 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs shadow-sm gap-1.5 cursor-pointer whitespace-nowrap"
+                        >
+                          <MessageSquare className="w-3.5 h-3.5" />
+                          <span>Confirmar WhatsApp</span>
+                        </Button>
+                      )}
+
+                      {/* Botão Ver Comprovante */}
+                      <Link
+                        href={`/agenda/${ag.id}/comprovante`}
+                        className="flex-1 sm:flex-initial inline-flex items-center justify-center rounded-full h-9 px-3.5 text-xs border border-outline-variant hover:border-primary/50 text-on-surface cursor-pointer whitespace-nowrap"
                       >
-                        <MessageSquare className="w-3.5 h-3.5" />
-                        <span>Confirmar WhatsApp</span>
-                      </Button>
-                    )}
-
-                    {/* Botão Ver Comprovante */}
-                    <Link
-                      href={`/agenda/${ag.id}/comprovante`}
-                      className="inline-flex items-center justify-center rounded-full h-9 px-3.5 text-xs border border-outline-variant hover:border-primary/50 text-on-surface cursor-pointer"
-                    >
-                      <Receipt className="w-3.5 h-3.5 mr-1 text-primary" />
-                      <span>Comprovante</span>
-                    </Link>
+                        <Receipt className="w-3.5 h-3.5 mr-1 text-primary" />
+                        <span>Comprovante</span>
+                      </Link>
+                    </div>
                   </div>
                 </div>
               </div>
