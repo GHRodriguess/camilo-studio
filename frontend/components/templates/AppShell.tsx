@@ -31,9 +31,16 @@ const NAV_ITEMS = [
   { href: '/configuracoes', label: 'Ajustes', icon: Settings },
 ];
 
+const emptySubscribe = () => () => {};
+
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { user, logout } = useAuth();
+  const mounted = React.useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false
+  );
 
   // Rotas que não devem exibir o shell (login, recuperação de senha)
   const isAuthPage =
@@ -82,17 +89,23 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <DropdownMenuTrigger className="flex items-center gap-3 w-full p-2 rounded-2xl hover:bg-surface-container transition-colors text-left cursor-pointer outline-none">
               <Avatar className="w-9 h-9 border border-outline-variant/60">
                 <AvatarImage src="" />
-                <AvatarFallback className="bg-primary/10 text-primary font-semibold text-xs">
-                  {user?.nome ? user.nome.slice(0, 2).toUpperCase() : 'CS'}
+                <AvatarFallback className="bg-primary/10 text-primary font-semibold text-xs" suppressHydrationWarning>
+                  {mounted && user?.nome ? user.nome.slice(0, 2).toUpperCase() : 'CS'}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold text-on-surface truncate">{user?.nome || 'Profissional'}</p>
-                <p className="text-[10px] text-on-surface-variant truncate capitalize">{user?.perfil || 'Equipe'}</p>
+                <p className="text-xs font-semibold text-on-surface truncate" suppressHydrationWarning>
+                  {mounted && user?.nome ? user.nome : 'Profissional'}
+                </p>
+                <p className="text-[10px] text-on-surface-variant truncate capitalize" suppressHydrationWarning>
+                  {mounted && user?.perfil ? user.perfil : 'Equipe'}
+                </p>
               </div>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-52 rounded-2xl p-1.5 shadow-lg border-outline-variant">
-              <DropdownMenuLabel className="text-xs font-medium text-on-surface-variant">Minha Conta</DropdownMenuLabel>
+              <DropdownMenuLabel className="text-xs font-medium text-on-surface-variant" suppressHydrationWarning>
+                {mounted && user?.email ? user.email : 'Minha Conta'}
+              </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={logout} className="text-destructive focus:text-destructive cursor-pointer rounded-xl text-xs gap-2">
                 <LogOut className="w-3.5 h-3.5" />
@@ -121,20 +134,24 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           {/* Menu de Perfil Topbar */}
           <div className="flex items-center gap-3">
             <div className="text-right hidden sm:block">
-              <p className="text-xs font-medium text-on-surface">{user?.nome}</p>
-              <p className="text-[10px] text-primary font-semibold uppercase tracking-wider">{user?.perfil}</p>
+              <p className="text-xs font-medium text-on-surface" suppressHydrationWarning>
+                {mounted ? user?.nome : ''}
+              </p>
+              <p className="text-[10px] text-primary font-semibold uppercase tracking-wider" suppressHydrationWarning>
+                {mounted ? user?.perfil : ''}
+              </p>
             </div>
             <DropdownMenu>
               <DropdownMenuTrigger className="rounded-full ring-2 ring-primary/20 hover:ring-primary/40 transition-all cursor-pointer outline-none">
                 <Avatar className="w-8 h-8">
-                  <AvatarFallback className="bg-primary/10 text-primary font-bold text-xs">
-                    {user?.nome ? user.nome.slice(0, 2).toUpperCase() : 'CS'}
+                  <AvatarFallback className="bg-primary/10 text-primary font-bold text-xs" suppressHydrationWarning>
+                    {mounted && user?.nome ? user.nome.slice(0, 2).toUpperCase() : 'CS'}
                   </AvatarFallback>
                 </Avatar>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-52 rounded-2xl p-1.5 shadow-lg border-outline-variant">
-                <DropdownMenuLabel className="text-xs text-on-surface-variant">
-                  {user?.email}
+                <DropdownMenuLabel className="text-xs text-on-surface-variant" suppressHydrationWarning>
+                  {mounted ? user?.email : ''}
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={logout} className="text-destructive focus:text-destructive cursor-pointer rounded-xl text-xs gap-2">
