@@ -1,7 +1,7 @@
-from rest_framework.routers import DefaultRouter
+from camilo_core.routers import OptionalSlashRouter
 from .views import ServicoViewSet
 
-router = DefaultRouter()
+router = OptionalSlashRouter()
 router.register(r'servicos', ServicoViewSet, basename='servicos')
 
 urlpatterns = router.urls

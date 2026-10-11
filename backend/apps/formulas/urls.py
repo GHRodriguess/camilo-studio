@@ -1,7 +1,7 @@
-from rest_framework.routers import DefaultRouter
+from camilo_core.routers import OptionalSlashRouter
 from .views import FormulaQuimicaViewSet
 
-router = DefaultRouter()
+router = OptionalSlashRouter()
 router.register(r'formulas', FormulaQuimicaViewSet, basename='formulas')
 
 urlpatterns = router.urls

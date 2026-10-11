@@ -1,5 +1,5 @@
-from django.urls import path, include
-from rest_framework.routers import DefaultRouter
+from django.urls import path, re_path, include
+from camilo_core.routers import OptionalSlashRouter
 from .views import (
     LoginView,
     LogoutView,
@@ -10,15 +10,15 @@ from .views import (
     UsuarioViewSet,
 )
 
-router = DefaultRouter()
+router = OptionalSlashRouter()
 router.register(r'usuarios', UsuarioViewSet, basename='usuarios')
 
 urlpatterns = [
-    path('auth/login/', LoginView.as_view(), name='auth-login'),
-    path('auth/logout/', LogoutView.as_view(), name='auth-logout'),
-    path('auth/me/', MeView.as_view(), name='auth-me'),
-    path('auth/redefinir-senha/', RedefinirSenhaPrimeiroAcessoView.as_view(), name='auth-redefinir-senha'),
-    path('auth/esqueci-senha/', EsqueciSenhaView.as_view(), name='auth-esqueci-senha'),
-    path('auth/confirmar-redefinicao/', ConfirmarRedefinicaoSenhaView.as_view(), name='auth-confirmar-redefinicao'),
+    re_path(r'^auth/login/?$', LoginView.as_view(), name='auth-login'),
+    re_path(r'^auth/logout/?$', LogoutView.as_view(), name='auth-logout'),
+    re_path(r'^auth/me/?$', MeView.as_view(), name='auth-me'),
+    re_path(r'^auth/redefinir-senha/?$', RedefinirSenhaPrimeiroAcessoView.as_view(), name='auth-redefinir-senha'),
+    re_path(r'^auth/esqueci-senha/?$', EsqueciSenhaView.as_view(), name='auth-esqueci-senha'),
+    re_path(r'^auth/confirmar-redefinicao/?$', ConfirmarRedefinicaoSenhaView.as_view(), name='auth-confirmar-redefinicao'),
     path('', include(router.urls)),
 ]

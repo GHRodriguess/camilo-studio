@@ -16,6 +16,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-camilo-studio-product
 DEBUG = os.environ.get('DEBUG', 'True').lower() in ('true', '1', 'yes')
 
 ALLOWED_HOSTS = ['*']
+APPEND_SLASH = False
 
 # Application definition
 INSTALLED_APPS = [
@@ -127,6 +128,10 @@ CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:3000',
     'http://127.0.0.1:3000',
+    'http://localhost:3001',
+    'http://127.0.0.1:3001',
+    'http://192.168.0.101:3000',
+    'http://192.168.0.101:3001',
 ]
 CORS_ALLOW_CREDENTIALS = True
 

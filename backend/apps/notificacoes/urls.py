@@ -1,11 +1,11 @@
-from django.urls import path, include
-from rest_framework.routers import DefaultRouter
+from django.urls import path, re_path, include
+from camilo_core.routers import OptionalSlashRouter
 from .views import NotificacaoWhatsAppViewSet, ConfiguracaoAtelieView
 
-router = DefaultRouter()
+router = OptionalSlashRouter()
 router.register(r'notificacoes', NotificacaoWhatsAppViewSet, basename='notificacoes')
 
 urlpatterns = [
-    path('configuracoes/', ConfiguracaoAtelieView.as_view(), name='configuracoes-atelie'),
+    re_path(r'^configuracoes/?$', ConfiguracaoAtelieView.as_view(), name='configuracoes-atelie'),
     path('', include(router.urls)),
 ]
