@@ -4,7 +4,7 @@ from .models import Profissional
 
 @admin.register(Profissional)
 class ProfissionalAdmin(admin.ModelAdmin):
-    list_display = ('nome', 'cargo', 'cadeira', 'horario_inicio', 'horario_fim', 'ativo')
-    list_filter = ('ativo', 'cadeira')
-    search_fields = ('nome', 'cargo', 'cadeira')
+    list_display = ('nome', 'cargo', 'ativo')
+    list_filter = ('ativo',)
+    search_fields = ('nome', 'cargo')
     filter_horizontal = ('servicos',)

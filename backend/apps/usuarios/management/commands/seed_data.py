@@ -47,41 +47,29 @@ class Command(BaseCommand):
                 'usuario': admin_user,
                 'nome': 'Gabriel Camilo',
                 'cargo': 'Hair Stylist & Colorista Master',
-                'cadeira': 'Bancada 01 - Ilha Central',
                 'cor_hex': '#7C3AED',
                 'foto_url': 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
-                'horario_inicio': '09:00',
-                'horario_fim': '20:00',
             },
             {
                 'email': 'mariana@camilostudio.com',
                 'nome': 'Mariana Rios',
                 'cargo': 'Especialista em Mechas & Balayage',
-                'cadeira': 'Cadeira 02 - Espaço Loiros',
                 'cor_hex': '#9E41F5',
                 'foto_url': 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=400&q=80',
-                'horario_inicio': '09:00',
-                'horario_fim': '19:00',
             },
             {
                 'email': 'lucas@camilostudio.com',
                 'nome': 'Lucas Silveira',
                 'cargo': 'Master Stylist & Cortes de Precisão',
-                'cadeira': 'Cadeira 03 - Ateliê Masculino & Visagismo',
                 'cor_hex': '#831ADA',
                 'foto_url': 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80',
-                'horario_inicio': '10:00',
-                'horario_fim': '19:00',
             },
             {
                 'email': 'beatriz@camilostudio.com',
                 'nome': 'Beatriz Costa',
                 'cargo': 'Terapeuta Capilar & Cuidados Holísticos',
-                'cadeira': 'Lavatório SPA 01',
                 'cor_hex': '#5F34A8',
                 'foto_url': 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&q=80',
-                'horario_inicio': '09:00',
-                'horario_fim': '18:00',
             },
         ]
 
@@ -101,11 +89,8 @@ class Command(BaseCommand):
                 defaults={
                     'usuario': user,
                     'cargo': ed['cargo'],
-                    'cadeira': ed['cadeira'],
                     'cor_hex': ed['cor_hex'],
                     'foto_url': ed['foto_url'],
-                    'horario_inicio': ed['horario_inicio'],
-                    'horario_fim': ed['horario_fim'],
                     'ativo': True,
                 }
             )

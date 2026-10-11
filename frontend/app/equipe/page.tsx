@@ -4,10 +4,10 @@ import React, { useEffect, useState, useCallback } from 'react';
 import {
   Sparkles,
   Plus,
-  Clock,
   ShieldCheck,
   KeyRound,
   CheckCircle2,
+  Mail,
 } from 'lucide-react';
 import { api, Profissional } from '@/lib/api';
 import { LoadingState } from '@/components/atoms/LoadingState';
@@ -36,9 +36,7 @@ export default function EquipePage() {
   const [modalNovoOpen, setModalNovoOpen] = useState(false);
   const [formNome, setFormNome] = useState('');
   const [formCargo, setFormCargo] = useState('Hair Stylist');
-  const [formCadeira, setFormCadeira] = useState('Cadeira 01');
-  const [formHorarioInicio, setFormHorarioInicio] = useState('09:00');
-  const [formHorarioFim, setFormHorarioFim] = useState('19:00');
+  const [formEmail, setFormEmail] = useState('');
   const [formCorHex] = useState('#7C3AED');
   const [saving, setSaving] = useState(false);
 
@@ -88,24 +86,32 @@ export default function EquipePage() {
     (p) =>
       p.nome.toLowerCase().includes(search.toLowerCase()) ||
       p.cargo.toLowerCase().includes(search.toLowerCase()) ||
-      p.cadeira.toLowerCase().includes(search.toLowerCase())
+      (p.email_usuario && p.email_usuario.toLowerCase().includes(search.toLowerCase()))
   );
 
   const handleSalvarProfissional = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
     try {
-      await api.createProfissional({
+      const novo = await api.createProfissional({
         nome: formNome,
         cargo: formCargo,
-        cadeira: formCadeira,
-        horario_inicio: formHorarioInicio,
-        horario_fim: formHorarioFim,
         cor_hex: formCorHex,
         ativo: true,
       });
+
+      if (formEmail.trim()) {
+        try {
+          await api.criarAcessoProfissional(novo.id, formEmail.trim(), 'profissional');
+        } catch (errAcesso) {
+          console.error('Profissional criado, mas erro ao gerar acesso:', errAcesso);
+        }
+      }
+
       setModalNovoOpen(false);
       setFormNome('');
+      setFormCargo('Hair Stylist');
+      setFormEmail('');
       await carregarEquipe();
     } catch (err) {
       console.error('Erro ao criar profissional:', err);
@@ -146,10 +152,10 @@ export default function EquipePage() {
             Corpo de Especialistas
           </span>
           <h1 className="text-2xl sm:text-3xl font-bold text-on-surface font-heading tracking-tight mt-0.5">
-            Equipe & Escala de Horários
+            Equipe do Ateliê
           </h1>
           <p className="text-xs sm:text-sm text-on-surface-variant">
-            Gerencie profissionais, cadeiras de atendimento e credenciais de acesso.
+            Gerencie profissionais do ateliê e credenciais de acesso ao sistema.
           </p>
         </div>
 
@@ -166,11 +172,11 @@ export default function EquipePage() {
       <SearchBar
         value={search}
         onChange={setSearch}
-        placeholder="Buscar profissional por nome, especialidade ou cadeira..."
+        placeholder="Buscar profissional por nome ou especialidade..."
       />
 
       {loading ? (
-        <LoadingState message="Carregando escala da equipe..." />
+        <LoadingState message="Carregando profissionais da equipe..." />
       ) : equipe.length === 0 ? (
         <EmptyState
           icon={Sparkles}
@@ -206,34 +212,29 @@ export default function EquipePage() {
                     </p>
                     <div className="flex items-center gap-1.5 mt-1.5">
                       <span className="w-2 h-2 rounded-full" style={{ backgroundColor: prof.cor_hex }} />
-                      <span className="text-[11px] text-on-surface-variant font-mono">
-                        {prof.cadeira}
+                      <span className="text-[11px] text-on-surface-variant font-medium">
+                        Equipe Camilo Studio
                       </span>
                     </div>
-                  </div>
-                </div>
 
-                <div className="space-y-2 py-3 border-y border-outline-variant/40 text-xs text-on-surface-variant">
-                  <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-1.5">
-                      <Clock className="w-3.5 h-3.5 text-primary" />
-                      Expediente:
-                    </span>
-                    <span className="font-mono font-medium text-on-surface">
-                      {prof.horario_inicio} às {prof.horario_fim}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span>Dias:</span>
-                    <span className="uppercase text-[10px] font-semibold tracking-wider text-on-surface">
-                      {prof.dias_semana || 'Ter - Sáb'}
-                    </span>
+                    {/* E-mail de Login do Profissional */}
+                    {prof.email_usuario ? (
+                      <div className="flex items-center gap-1.5 text-xs text-on-surface-variant font-mono mt-2.5 bg-surface-container-low px-2.5 py-1.5 rounded-xl border border-outline-variant/30">
+                        <Mail className="w-3.5 h-3.5 text-primary shrink-0" />
+                        <span className="truncate">{prof.email_usuario}</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1.5 text-[11px] text-on-surface-variant/60 mt-2.5">
+                        <Mail className="w-3 h-3 text-on-surface-variant/40 shrink-0" />
+                        <span className="italic">Login ainda não configurado</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
 
               {/* Status de Acesso */}
-              <div className="pt-4 flex items-center justify-between gap-2">
+              <div className="pt-4 border-t border-outline-variant/40 flex items-center justify-between gap-2">
                 {prof.possui_acesso ? (
                   <Badge variant="outline" className="rounded-full text-[11px] gap-1 text-emerald-600 border-emerald-200 bg-emerald-50/50">
                     <ShieldCheck className="w-3 h-3" />
@@ -264,7 +265,7 @@ export default function EquipePage() {
               Cadastrar Novo Profissional
             </DialogTitle>
             <DialogDescription className="text-xs text-on-surface-variant">
-              Adicione o especialista à escala e defina sua estação de trabalho.
+              Adicione o especialista à equipe do ateliê e configure seu login.
             </DialogDescription>
           </DialogHeader>
 
@@ -280,52 +281,29 @@ export default function EquipePage() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-on-surface-variant">Cargo / Função</Label>
-                <Input
-                  required
-                  value={formCargo}
-                  onChange={(e) => setFormCargo(e.target.value)}
-                  placeholder="Ex: Colorista Master"
-                  className="rounded-full h-11 text-xs"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-on-surface-variant">Cadeira / Estação</Label>
-                <Input
-                  required
-                  value={formCadeira}
-                  onChange={(e) => setFormCadeira(e.target.value)}
-                  placeholder="Ex: Bancada 04"
-                  className="rounded-full h-11 text-xs"
-                />
-              </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-on-surface-variant">Cargo / Especialidade</Label>
+              <Input
+                required
+                value={formCargo}
+                onChange={(e) => setFormCargo(e.target.value)}
+                placeholder="Ex: Colorista Master"
+                className="rounded-full h-11 text-xs"
+              />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-on-surface-variant">Início Expediente</Label>
-                <Input
-                  type="time"
-                  required
-                  value={formHorarioInicio}
-                  onChange={(e) => setFormHorarioInicio(e.target.value)}
-                  className="rounded-full h-11 text-xs font-mono"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-on-surface-variant">Fim Expediente</Label>
-                <Input
-                  type="time"
-                  required
-                  value={formHorarioFim}
-                  onChange={(e) => setFormHorarioFim(e.target.value)}
-                  className="rounded-full h-11 text-xs font-mono"
-                />
-              </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-on-surface-variant">E-mail de Login (opcional)</Label>
+              <Input
+                type="email"
+                value={formEmail}
+                onChange={(e) => setFormEmail(e.target.value)}
+                placeholder="Ex: gabriela@camilostudio.com"
+                className="rounded-full h-11 text-xs"
+              />
+              <p className="text-[10px] text-on-surface-variant">
+                Se informado, o sistema já gera o acesso com senha provisória enviada por e-mail.
+              </p>
             </div>
 
             <div className="pt-3 flex justify-end gap-2">

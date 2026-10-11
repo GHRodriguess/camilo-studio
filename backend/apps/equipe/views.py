@@ -16,9 +16,9 @@ class ProfissionalViewSet(viewsets.ModelViewSet):
     serializer_class = ProfissionalSerializer
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['ativo', 'cadeira']
-    search_fields = ['nome', 'cargo', 'cadeira']
-    ordering_fields = ['nome', 'cadeira', 'criado_em']
+    filterset_fields = ['ativo']
+    search_fields = ['nome', 'cargo', 'usuario__email']
+    ordering_fields = ['nome', 'criado_em']
     ordering = ['nome']
 
     @action(detail=True, methods=['post'], url_path='criar-acesso')
