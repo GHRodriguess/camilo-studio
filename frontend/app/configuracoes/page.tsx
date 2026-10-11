@@ -4,7 +4,6 @@ import React, { useEffect, useState } from 'react';
 import {
   Building2,
   MessageSquare,
-  Mail,
   CheckCircle2,
 } from 'lucide-react';
 import { api } from '@/lib/api';
@@ -236,19 +235,6 @@ export default function ConfiguracoesPage() {
               className="rounded-2xl text-xs font-sans resize-none"
             />
           </div>
-        </div>
-
-        {/* BLOCO 3: INTEGRAÇÃO SMTP & EMAIL */}
-        <div className="p-6 rounded-3xl bg-surface-container-low border border-outline-variant/40 space-y-2">
-          <div className="flex items-center gap-2 text-xs font-semibold text-on-surface">
-            <Mail className="w-4 h-4 text-primary" />
-            <span>Serviço de Envio de E-mails (SMTP)</span>
-          </div>
-          <p className="text-xs text-on-surface-variant leading-relaxed">
-            As credenciais seguras de envio de e-mails para primeiro acesso e recuperação de senha
-            são gerenciadas através de variáveis de ambiente no arquivo <code>backend/.env</code>,
-            garantindo total conformidade de segurança.
-          </p>
         </div>
 
         {/* ÚNICO BOTÃO PRIMÁRIO */}
