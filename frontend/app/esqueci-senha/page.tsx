@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Mail, ArrowLeft, Loader2, CheckCircle2 } from 'lucide-react';
+import { Mail, ArrowLeft, Loader2, CheckCircle2, ShieldAlert } from 'lucide-react';
 import { api } from '@/lib/api';
 import { Logo } from '@/components/atoms/Logo';
 import { Button } from '@/components/ui/button';
@@ -15,8 +15,8 @@ export default function EsqueciSenhaPage() {
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Campos para confirmação direta caso o usuário já tenha o token
-  const [tokenInput, setTokenInput] = useState('');
+  // Campos para validação por código numérico de 6 dígitos
+  const [codigoInput, setCodigoInput] = useState('');
   const [novaSenha, setNovaSenha] = useState('');
   const [confirmacao, setConfirmacao] = useState('');
   const [successReset, setSuccessReset] = useState(false);
@@ -27,11 +27,8 @@ export default function EsqueciSenhaPage() {
     setLoading(true);
 
     try {
-      const res = await api.esqueciSenha(email);
+      await api.esqueciSenha(email.trim());
       setSubmitted(true);
-      if (res.dev_token) {
-        setTokenInput(res.dev_token);
-      }
     } catch (err: unknown) {
       if (err instanceof Error) {
         setError(err.message);
@@ -47,16 +44,27 @@ export default function EsqueciSenhaPage() {
     e.preventDefault();
     setError(null);
 
+    const codigoLimpo = codigoInput.trim();
+    if (codigoLimpo.length !== 6) {
+      setError('Por favor, informe o código de 6 dígitos recebido por e-mail.');
+      return;
+    }
+
+    if (novaSenha.length < 6) {
+      setError('A nova senha deve ter no mínimo 6 caracteres.');
+      return;
+    }
+
     if (novaSenha !== confirmacao) {
-      setError('As senhas não coincidem.');
+      setError('As senhas digitadas não coincidem.');
       return;
     }
 
     setLoading(true);
     try {
       await api.confirmarRedefinicaoSenha({
-        email,
-        token: tokenInput,
+        email: email.trim(),
+        codigo: codigoLimpo,
         nova_senha: novaSenha,
         confirmacao_senha: confirmacao,
       });
@@ -65,7 +73,7 @@ export default function EsqueciSenhaPage() {
       if (err instanceof Error) {
         setError(err.message);
       } else {
-        setError('Token inválido ou expirado.');
+        setError('Código inválido ou expirado. Tente novamente.');
       }
     } finally {
       setLoading(false);
@@ -89,13 +97,16 @@ export default function EsqueciSenhaPage() {
             Recuperação de Acesso
           </h1>
           <p className="text-xs text-on-surface-variant mt-1.5 max-w-xs">
-            Informe o e-mail cadastrado para receber instruções de redefinição da sua senha.
+            {submitted
+              ? 'Digite o código de 6 dígitos que enviamos para seu e-mail e crie sua nova senha.'
+              : 'Informe o e-mail cadastrado para receber um código de uso único e redefinir sua senha.'}
           </p>
         </div>
 
         {error && (
-          <div className="mb-6 p-4 rounded-2xl bg-destructive/10 border border-destructive/20 text-destructive text-xs">
-            {error}
+          <div className="mb-6 p-4 rounded-2xl bg-destructive/10 border border-destructive/20 text-destructive text-xs flex items-center gap-2">
+            <ShieldAlert className="w-4 h-4 shrink-0" />
+            <span>{error}</span>
           </div>
         )}
 
@@ -106,11 +117,11 @@ export default function EsqueciSenhaPage() {
             </div>
             <h2 className="text-base font-semibold text-on-surface">Senha Redefinida!</h2>
             <p className="text-xs text-on-surface-variant">
-              Sua senha foi atualizada com sucesso. Você já pode fazer login no ateliê.
+              Sua senha foi atualizada com sucesso. Você já pode fazer login no ateliê com a sua nova credencial.
             </p>
             <Link
               href="/login"
-              className="inline-flex items-center justify-center w-full rounded-full mt-4 h-11 bg-primary text-primary-foreground font-semibold text-xs shadow-md shadow-primary/20"
+              className="inline-flex items-center justify-center w-full rounded-full mt-4 h-11 bg-primary text-primary-foreground font-semibold text-xs shadow-md shadow-primary/20 hover:bg-primary/90 transition-all cursor-pointer"
             >
               Ir para o Login
             </Link>
@@ -143,54 +154,58 @@ export default function EsqueciSenhaPage() {
               {loading ? (
                 <span className="flex items-center gap-2">
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  Enviando instruções...
+                  Enviando código...
                 </span>
               ) : (
-                'Enviar Instruções'
+                'Enviar Código de Recuperação'
               )}
             </Button>
           </form>
         ) : (
-          <div className="space-y-6">
-            <div className="p-4 rounded-2xl bg-surface-container border border-outline-variant/60 text-center space-y-2">
-              <CheckCircle2 className="w-6 h-6 text-primary mx-auto" />
-              <p className="text-xs font-semibold text-on-surface">Instruções enviadas para {email}</p>
+          <div className="space-y-5">
+            <div className="p-4 rounded-2xl bg-surface-container border border-outline-variant/60 text-center space-y-1.5">
+              <CheckCircle2 className="w-5 h-5 text-primary mx-auto" />
+              <p className="text-xs font-semibold text-on-surface">Código enviado para {email}</p>
               <p className="text-[11px] text-on-surface-variant">
-                Verifique sua caixa de entrada e siga as orientações para redefinir a sua senha.
+                Verifique sua caixa de entrada (e spam). O código é válido por <strong className="text-primary font-medium">15 minutos</strong>.
               </p>
             </div>
 
-            {/* Formulário de inserção do token */}
-            <form onSubmit={handleConfirmReset} className="space-y-4 pt-2">
+            {/* Formulário de validação com o código de 6 dígitos */}
+            <form onSubmit={handleConfirmReset} className="space-y-4 pt-1">
               <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-on-surface-variant">
-                  Código / Token de Redefinição
+                <Label htmlFor="codigo" className="text-xs font-medium text-on-surface-variant">
+                  Código de 6 Dígitos
                 </Label>
                 <Input
+                  id="codigo"
                   type="text"
                   required
-                  value={tokenInput}
-                  onChange={(e) => setTokenInput(e.target.value)}
-                  placeholder="Cole o token recebido"
-                  className="h-11 rounded-full text-xs"
+                  maxLength={6}
+                  value={codigoInput}
+                  onChange={(e) => setCodigoInput(e.target.value.replace(/\D/g, ''))}
+                  placeholder="000000"
+                  className="h-12 rounded-2xl text-center text-lg font-mono tracking-[0.35em] font-semibold border-primary/40 focus-visible:ring-primary"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-on-surface-variant">Nova Senha</Label>
+                <Label htmlFor="novaSenha" className="text-xs font-medium text-on-surface-variant">Nova Senha</Label>
                 <Input
+                  id="novaSenha"
                   type="password"
                   required
                   value={novaSenha}
                   onChange={(e) => setNovaSenha(e.target.value)}
-                  placeholder="Mínimo 6 caracteres"
+                  placeholder="Mínimo de 6 caracteres"
                   className="h-11 rounded-full text-xs"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-on-surface-variant">Confirmar Senha</Label>
+                <Label htmlFor="confirmacao" className="text-xs font-medium text-on-surface-variant">Confirmar Nova Senha</Label>
                 <Input
+                  id="confirmacao"
                   type="password"
                   required
                   value={confirmacao}
@@ -203,10 +218,27 @@ export default function EsqueciSenhaPage() {
               <Button
                 type="submit"
                 disabled={loading}
-                className="w-full h-11 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs shadow-md shadow-primary/25 cursor-pointer mt-2"
+                className="w-full h-12 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs shadow-md shadow-primary/25 cursor-pointer mt-2"
               >
-                {loading ? 'Redefinindo...' : 'Confirmar e Criar Nova Senha'}
+                {loading ? (
+                  <span className="flex items-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Validando e atualizando...
+                  </span>
+                ) : (
+                  'Confirmar e Atualizar Senha'
+                )}
               </Button>
+
+              <div className="text-center pt-2">
+                <button
+                  type="button"
+                  onClick={() => setSubmitted(false)}
+                  className="text-[11px] text-on-surface-variant hover:text-primary transition-colors cursor-pointer"
+                >
+                  Não recebeu o e-mail? Solicitar outro código
+                </button>
+              </div>
             </form>
           </div>
         )}

@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Eye, EyeOff, Loader2, Lock, Mail } from 'lucide-react';
+import { AlertCircle, Eye, EyeOff, Loader2, Lock, Mail } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { Logo } from '@/components/atoms/Logo';
 import { Button } from '@/components/ui/button';
@@ -23,7 +23,7 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      await login({ email, password });
+      await login({ email: email.trim(), password });
     } catch (err: unknown) {
       if (err instanceof Error) {
         setError(err.message);
@@ -56,8 +56,14 @@ export default function LoginPage() {
 
         {/* Mensagem de Erro */}
         {error && (
-          <div className="mb-6 p-4 rounded-2xl bg-destructive/10 border border-destructive/20 text-destructive text-xs leading-relaxed">
-            {error}
+          <div
+            role="alert"
+            className="mb-6 p-4 rounded-2xl bg-destructive/10 border border-destructive/20 text-destructive text-xs leading-relaxed flex items-start gap-3 animate-in fade-in duration-200"
+          >
+            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+            <div className="flex-1 whitespace-pre-line font-medium">
+              {error}
+            </div>
           </div>
         )}
 

@@ -11,6 +11,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Load environment variables if .env exists
 load_dotenv(BASE_DIR / '.env')
 
+# Configure SSL certificate bundle (resolves macOS Python SSL: CERTIFICATE_VERIFY_FAILED)
+try:
+    import certifi
+    if not os.environ.get('SSL_CERT_FILE'):
+        os.environ['SSL_CERT_FILE'] = certifi.where()
+except ImportError:
+    pass
+
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-camilo-studio-production-key-secret-2026')
 
 DEBUG = os.environ.get('DEBUG', 'True').lower() in ('true', '1', 'yes')
@@ -144,5 +152,8 @@ EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.gmail.com')
 EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 587))
 EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True').lower() in ('true', '1')
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
-EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '').replace(' ', '').replace('-', '')
 DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'Camilo Studio <contato@camilostudio.com>')
+
+# Frontend Web Application URL
+FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:3000').rstrip('/')
