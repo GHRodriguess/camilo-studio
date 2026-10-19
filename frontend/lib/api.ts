@@ -33,6 +33,8 @@ export interface Profissional {
   usuario?: number | null;
   email_usuario?: string | null;
   possui_acesso?: boolean;
+  usuario_ativo?: boolean;
+  total_historico?: number;
 }
 
 export interface FormulaQuimica {
@@ -126,6 +128,76 @@ export function setStoredUser(user: User | null) {
   }
 }
 
+/**
+ * Extrai de forma limpa e amigável as mensagens de erro retornadas pela API (Django REST Framework),
+ * evitando exibir JSON bruto como {"non_field_errors": ["..."]} na interface.
+ */
+export function extractApiErrorMessage(errorData: unknown): string {
+  if (!errorData) {
+    return 'Ocorreu um erro inesperado. Tente novamente.';
+  }
+
+  if (typeof errorData === 'string') {
+    // Se a string contiver JSON serializado, tenta decodificar para extrair o texto amigável
+    const trimmed = errorData.trim();
+    if ((trimmed.startsWith('{') && trimmed.endsWith('}')) || (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        return extractApiErrorMessage(parsed);
+      } catch {
+        return errorData;
+      }
+    }
+    return errorData;
+  }
+
+  if (Array.isArray(errorData)) {
+    const messages = errorData
+      .map((item) => extractApiErrorMessage(item))
+      .filter((msg) => Boolean(msg && msg.trim()));
+    return messages.join('\n');
+  }
+
+  if (typeof errorData === 'object') {
+    const obj = errorData as Record<string, unknown>;
+
+    // 1. Mensagens diretas comuns
+    if (typeof obj.detail === 'string' && obj.detail.trim()) {
+      return obj.detail;
+    }
+    if (typeof obj.message === 'string' && obj.message.trim()) {
+      return obj.message;
+    }
+    if (typeof obj.error === 'string' && obj.error.trim()) {
+      return obj.error;
+    }
+
+    // 2. Erros globais do DRF (non_field_errors)
+    if (obj.non_field_errors) {
+      const nonFieldMsg = extractApiErrorMessage(obj.non_field_errors);
+      if (nonFieldMsg) return nonFieldMsg;
+    }
+
+    // 3. Erros por campo (ex: email, password, etc.)
+    const messages: string[] = [];
+    for (const [key, val] of Object.entries(obj)) {
+      if (key === 'detail' || key === 'message' || key === 'error' || key === 'non_field_errors') {
+        continue;
+      }
+      const fieldMsg = extractApiErrorMessage(val);
+      if (fieldMsg) {
+        messages.push(fieldMsg);
+      }
+    }
+
+    if (messages.length > 0) {
+      return messages.join('\n');
+    }
+  }
+
+  return 'Ocorreu um erro na requisição. Tente novamente.';
+}
+
 async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const token = getToken();
   const headers: Record<string, string> = {
@@ -140,10 +212,17 @@ async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise
   });
 
   if (!response.ok) {
-    let errorDetail = 'Erro na requisição';
+    let errorDetail = 'Erro na comunicação com o servidor. Tente novamente.';
     try {
-      const errorJson = await response.json();
-      errorDetail = errorJson.detail || errorJson.error || JSON.stringify(errorJson);
+      const text = await response.text();
+      try {
+        const errorJson = JSON.parse(text);
+        errorDetail = extractApiErrorMessage(errorJson);
+      } catch {
+        if (text && text.trim().length > 0 && text.length < 300 && !text.includes('<!DOCTYPE')) {
+          errorDetail = text.trim();
+        }
+      }
     } catch {
       // fallback
     }
@@ -191,12 +270,12 @@ export const api = {
   },
 
   esqueciSenha: (email: string) =>
-    fetchApi<{ message: string; dev_token?: string }>('/auth/esqueci-senha/', {
+    fetchApi<{ message: string }>('/auth/esqueci-senha/', {
       method: 'POST',
       body: JSON.stringify({ email }),
     }),
 
-  confirmarRedefinicaoSenha: (data: { email: string; token: string; nova_senha: string; confirmacao_senha: string }) =>
+  confirmarRedefinicaoSenha: (data: { email: string; codigo?: string; token?: string; nova_senha: string; confirmacao_senha: string }) =>
     fetchApi<{ message: string; token: string; user: User }>('/auth/confirmar-redefinicao/', {
       method: 'POST',
       body: JSON.stringify(data),
@@ -302,12 +381,23 @@ export const api = {
     }),
 
   deleteProfissional: (id: number) =>
-    fetchApi(`/profissionais/${id}/`, {
+    fetchApi<{ message: string; soft_deleted: boolean; profissional?: Profissional }>(`/profissionais/${id}/`, {
       method: 'DELETE',
     }),
 
+  toggleAtivoProfissional: (id: number, ativo?: boolean) =>
+    fetchApi<{ message: string; profissional: Profissional }>(`/profissionais/${id}/toggle-ativo/`, {
+      method: 'POST',
+      body: JSON.stringify(ativo !== undefined ? { ativo } : {}),
+    }),
+
+  resetarSenhaProfissional: (id: number) =>
+    fetchApi<{ message: string; profissional: Profissional }>(`/profissionais/${id}/resetar-senha/`, {
+      method: 'POST',
+    }),
+
   criarAcessoProfissional: (id: number, email: string, perfil: 'admin' | 'profissional' = 'profissional') =>
-    fetchApi<{ message: string; email: string; senha_temp?: string }>(`/profissionais/${id}/criar-acesso/`, {
+    fetchApi<{ message: string; email: string; profissional: Profissional }>(`/profissionais/${id}/criar-acesso/`, {
       method: 'POST',
       body: JSON.stringify({ email, perfil }),
     }),

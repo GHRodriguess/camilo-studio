@@ -5,11 +5,16 @@ import {
   Sparkles,
   Plus,
   ShieldCheck,
+  ShieldAlert,
   KeyRound,
   CheckCircle2,
   Mail,
   Edit2,
   Trash2,
+  UserX,
+  UserCheck,
+  RotateCcw,
+  Info,
 } from 'lucide-react';
 import { api, Profissional } from '@/lib/api';
 import { LoadingState } from '@/components/atoms/LoadingState';
@@ -64,7 +69,16 @@ export default function EquipePage() {
   const [emailAcesso, setEmailAcesso] = useState('');
   const [perfilAcesso, setPerfilAcesso] = useState<'admin' | 'profissional'>('profissional');
   const [savingAcesso, setSavingAcesso] = useState(false);
-  const [resultadoAcesso, setResultadoAcesso] = useState<{ email: string; senha_temp?: string } | null>(null);
+  const [resultadoAcesso, setResultadoAcesso] = useState<{ email: string } | null>(null);
+
+  // Modal Resetar Senha
+  const [modalResetOpen, setModalResetOpen] = useState(false);
+  const [profissionalParaResetar, setProfissionalParaResetar] = useState<Profissional | null>(null);
+  const [resetando, setResetando] = useState(false);
+
+  // Feedback e Ações Rápidas
+  const [feedbackMsg, setFeedbackMsg] = useState<{ tipo: 'sucesso' | 'info' | 'erro'; texto: string } | null>(null);
+  const [loadingAcaoId, setLoadingAcaoId] = useState<number | null>(null);
 
   const recarregarEquipe = async () => {
     try {
@@ -128,6 +142,7 @@ export default function EquipePage() {
       setFormNome('');
       setFormCargo('Hair Stylist');
       setFormEmail('');
+      setFeedbackMsg({ tipo: 'sucesso', texto: 'Profissional cadastrado com sucesso!' });
       await recarregarEquipe();
     } catch (err) {
       console.error('Erro ao criar profissional:', err);
@@ -159,6 +174,7 @@ export default function EquipePage() {
         ativo: editAtivo,
       });
       setModalEditOpen(false);
+      setFeedbackMsg({ tipo: 'sucesso', texto: 'Dados do profissional atualizados com sucesso!' });
       await recarregarEquipe();
     } catch (err: unknown) {
       if (err instanceof Error) {
@@ -180,12 +196,17 @@ export default function EquipePage() {
     if (!profissionalParaExcluir) return;
     setExcluindo(true);
     try {
-      await api.deleteProfissional(profissionalParaExcluir.id);
+      const res = await api.deleteProfissional(profissionalParaExcluir.id);
       setModalDeleteOpen(false);
       setProfissionalParaExcluir(null);
+      setFeedbackMsg({
+        tipo: res.soft_deleted ? 'info' : 'sucesso',
+        texto: res.message || 'Membro da equipe removido com sucesso.',
+      });
       await recarregarEquipe();
     } catch (err) {
       console.error('Erro ao remover profissional:', err);
+      setFeedbackMsg({ tipo: 'erro', texto: 'Erro ao remover profissional.' });
     } finally {
       setExcluindo(false);
     }
@@ -205,12 +226,52 @@ export default function EquipePage() {
     setSavingAcesso(true);
     try {
       const res = await api.criarAcessoProfissional(profissionalAcesso.id, emailAcesso, perfilAcesso);
-      setResultadoAcesso({ email: res.email, senha_temp: res.senha_temp });
+      setResultadoAcesso({ email: res.email });
       await recarregarEquipe();
     } catch (err) {
       console.error('Erro ao criar acesso:', err);
     } finally {
       setSavingAcesso(false);
+    }
+  };
+
+  const handleToggleAtivo = async (prof: Profissional) => {
+    setLoadingAcaoId(prof.id);
+    try {
+      const res = await api.toggleAtivoProfissional(prof.id);
+      setFeedbackMsg({ tipo: 'sucesso', texto: res.message });
+      await recarregarEquipe();
+    } catch (err: unknown) {
+      setFeedbackMsg({
+        tipo: 'erro',
+        texto: err instanceof Error ? err.message : 'Erro ao alternar status do colaborador.',
+      });
+    } finally {
+      setLoadingAcaoId(null);
+    }
+  };
+
+  const abrirModalResetar = (prof: Profissional) => {
+    setProfissionalParaResetar(prof);
+    setModalResetOpen(true);
+  };
+
+  const handleConfirmarReset = async () => {
+    if (!profissionalParaResetar) return;
+    setResetando(true);
+    try {
+      const res = await api.resetarSenhaProfissional(profissionalParaResetar.id);
+      setModalResetOpen(false);
+      setProfissionalParaResetar(null);
+      setFeedbackMsg({ tipo: 'sucesso', texto: res.message });
+      await recarregarEquipe();
+    } catch (err: unknown) {
+      setFeedbackMsg({
+        tipo: 'erro',
+        texto: err instanceof Error ? err.message : 'Erro ao resetar senha.',
+      });
+    } finally {
+      setResetando(false);
     }
   };
 
@@ -239,6 +300,36 @@ export default function EquipePage() {
           Novo Profissional
         </Button>
       </div>
+
+      {feedbackMsg && (
+        <div
+          className={`p-3.5 rounded-2xl border text-xs flex items-center justify-between gap-3 animate-in fade-in duration-200 ${
+            feedbackMsg.tipo === 'erro'
+              ? 'bg-destructive/10 border-destructive/20 text-destructive'
+              : feedbackMsg.tipo === 'info'
+              ? 'bg-amber-500/10 border-amber-500/20 text-amber-800'
+              : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-800'
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            {feedbackMsg.tipo === 'erro' ? (
+              <ShieldAlert className="w-4 h-4 shrink-0" />
+            ) : feedbackMsg.tipo === 'info' ? (
+              <Info className="w-4 h-4 shrink-0" />
+            ) : (
+              <CheckCircle2 className="w-4 h-4 shrink-0" />
+            )}
+            <span>{feedbackMsg.texto}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setFeedbackMsg(null)}
+            className="text-xs font-semibold hover:opacity-75 cursor-pointer px-1"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       <SearchBar
         value={search}
@@ -285,7 +376,7 @@ export default function EquipePage() {
                       <div className="flex items-center gap-1.5 mt-1.5">
                         <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: prof.cor_hex }} />
                         <span className="text-[11px] text-on-surface-variant font-medium">
-                          {prof.ativo ? 'Ativo na Equipe' : 'Inativo'}
+                          {prof.ativo ? 'Ativo na Equipe' : 'Inativo na Escala'}
                         </span>
                       </div>
                     </div>
@@ -323,15 +414,74 @@ export default function EquipePage() {
                 )}
               </div>
 
-              {/* Status de Acesso */}
-              <div className="pt-4 border-t border-outline-variant/40 flex items-center justify-between gap-2">
-                {prof.possui_acesso ? (
-                  <Badge variant="outline" className="rounded-full text-[11px] gap-1 text-emerald-600 border-emerald-200 bg-emerald-50/50">
-                    <ShieldCheck className="w-3 h-3" />
-                    Acesso Ativo
-                  </Badge>
-                ) : (
+              {/* Status de Acesso e Controles */}
+              <div className="pt-4 border-t border-outline-variant/40 flex flex-col gap-2.5">
+                <div className="flex items-center justify-between gap-2">
+                  {prof.possui_acesso ? (
+                    prof.usuario_ativo !== false && prof.ativo ? (
+                      <Badge variant="outline" className="rounded-full text-[11px] gap-1 text-emerald-600 border-emerald-200 bg-emerald-50/50">
+                        <ShieldCheck className="w-3 h-3" />
+                        Acesso Ativo
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="rounded-full text-[11px] gap-1 text-amber-700 border-amber-300 bg-amber-50/50">
+                        <ShieldAlert className="w-3 h-3" />
+                        Acesso Desativado
+                      </Badge>
+                    )
+                  ) : (
+                    <Badge variant="outline" className="rounded-full text-[11px] gap-1 text-on-surface-variant/70 border-outline-variant bg-surface-container-low">
+                      Sem Acesso Web
+                    </Badge>
+                  )}
+
+                  {prof.possui_acesso && (
+                    <div className="flex items-center gap-1.5">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        disabled={loadingAcaoId === prof.id}
+                        onClick={() => abrirModalResetar(prof)}
+                        className="rounded-full h-8 px-2.5 text-[11px] text-on-surface-variant hover:text-primary hover:bg-primary/5 cursor-pointer gap-1"
+                        title="Gerar nova senha provisória e reenviar por e-mail"
+                      >
+                        <RotateCcw className="w-3 h-3" />
+                        <span>Resetar Senha</span>
+                      </Button>
+
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={loadingAcaoId === prof.id}
+                        onClick={() => handleToggleAtivo(prof)}
+                        className={`rounded-full h-8 px-2.5 text-[11px] cursor-pointer gap-1 transition-all ${
+                          prof.usuario_ativo !== false && prof.ativo
+                            ? 'border-amber-300 text-amber-700 hover:bg-amber-50'
+                            : 'border-emerald-300 text-emerald-700 hover:bg-emerald-50'
+                        }`}
+                        title={prof.usuario_ativo !== false && prof.ativo ? 'Desativar acesso ao sistema' : 'Reativar acesso ao sistema'}
+                      >
+                        {prof.usuario_ativo !== false && prof.ativo ? (
+                          <>
+                            <UserX className="w-3 h-3" />
+                            <span>Desativar</span>
+                          </>
+                        ) : (
+                          <>
+                            <UserCheck className="w-3 h-3" />
+                            <span>Reativar</span>
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+
+                {!prof.possui_acesso && (
                   <Button
+                    type="button"
                     variant="outline"
                     size="sm"
                     onClick={() => abrirModalAcesso(prof)}
@@ -528,10 +678,14 @@ export default function EquipePage() {
               <Trash2 className="w-5 h-5" />
               Remover Profissional
             </DialogTitle>
-            <DialogDescription className="text-xs text-on-surface-variant">
-              Tem certeza que deseja remover <strong>{profissionalParaExcluir?.nome}</strong> da equipe do ateliê?
+            <DialogDescription className="text-xs text-on-surface-variant pt-1">
+              Tem certeza que deseja remover <strong>{profissionalParaExcluir?.nome}</strong> da equipe?
             </DialogDescription>
           </DialogHeader>
+
+          <div className="p-3 bg-surface-container rounded-2xl border border-outline-variant/50 text-[11px] leading-relaxed text-on-surface-variant my-2">
+            <strong className="text-on-surface font-semibold">🛡️ Integridade dos Dados:</strong> Se o colaborador possuir agendamentos ou procedimentos no histórico, seu acesso será desativado e ele será removido da escala ativa para preservar os registros. Caso seja um cadastro sem vínculos, será excluído definitivamente.
+          </div>
 
           <div className="pt-3 flex items-center justify-end gap-2.5">
             <Button
@@ -548,7 +702,7 @@ export default function EquipePage() {
               onClick={handleConfirmarExclusao}
               className="rounded-full text-xs h-10 px-5 bg-destructive hover:bg-destructive/90 text-white font-semibold cursor-pointer"
             >
-              {excluindo ? 'Removendo...' : 'Confirmar Remoção'}
+              {excluindo ? 'Processando...' : 'Confirmar Remoção'}
             </Button>
           </div>
         </DialogContent>
@@ -562,26 +716,26 @@ export default function EquipePage() {
               Criar Acesso ao Sistema
             </DialogTitle>
             <DialogDescription className="text-xs text-on-surface-variant">
-              Uma senha temporária será gerada e enviada para o e-mail do profissional.
+              Uma senha temporária confidencial será gerada e enviada para o e-mail do profissional.
             </DialogDescription>
           </DialogHeader>
 
           {resultadoAcesso ? (
             <div className="py-4 space-y-4 text-center">
-              <CheckCircle2 className="w-12 h-12 text-primary mx-auto" />
-              <h4 className="text-sm font-semibold text-on-surface">Conta criada com sucesso!</h4>
-              <p className="text-xs text-on-surface-variant">
-                O e-mail de boas-vindas com a senha provisória foi disparado para <strong>{resultadoAcesso.email}</strong>.
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary mx-auto">
+                <CheckCircle2 className="w-7 h-7" />
+              </div>
+              <h4 className="text-sm font-semibold text-on-surface">Acesso criado com sucesso!</h4>
+              <p className="text-xs text-on-surface-variant max-w-xs mx-auto">
+                As instruções de primeiro acesso e a senha provisória foram enviadas com sucesso para <strong>{resultadoAcesso.email}</strong>.
               </p>
-              {resultadoAcesso.senha_temp && (
-                <div className="p-3 bg-surface-container rounded-2xl border border-outline-variant text-xs">
-                  <span className="text-on-surface-variant">Senha gerada (dev): </span>
-                  <strong className="font-mono text-primary">{resultadoAcesso.senha_temp}</strong>
-                </div>
-              )}
+              <div className="p-3 bg-surface-container rounded-2xl border border-outline-variant text-[11px] text-on-surface-variant">
+                O colaborador deverá cadastrar sua senha definitiva e pessoal obrigatoriamente no primeiro login.
+              </div>
               <Button
+                type="button"
                 onClick={() => setModalAcessoOpen(false)}
-                className="w-full rounded-full text-xs h-10 mt-2"
+                className="w-full rounded-full text-xs h-10 mt-2 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold cursor-pointer"
               >
                 Concluir
               </Button>
@@ -632,7 +786,7 @@ export default function EquipePage() {
                 <Button
                   type="submit"
                   disabled={savingAcesso}
-                  className="rounded-full text-xs h-10 px-6 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-md shadow-primary/20"
+                  className="rounded-full text-xs h-10 px-6 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-md shadow-primary/20 cursor-pointer"
                 >
                   {savingAcesso ? 'Criando e enviando...' : 'Criar Conta & Enviar E-mail'}
                 </Button>
@@ -641,6 +795,55 @@ export default function EquipePage() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* MODAL REDEFINIR SENHA DO PROFISSIONAL */}
+      <Dialog open={modalResetOpen} onOpenChange={setModalResetOpen}>
+        <DialogContent className="sm:max-w-md rounded-3xl p-6 bg-surface-container-lowest border-outline-variant">
+          <DialogHeader>
+            <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary mb-2">
+              <RotateCcw className="w-6 h-6" />
+            </div>
+            <DialogTitle className="text-lg font-bold text-on-surface font-heading">
+              Redefinir Acesso de {profissionalParaResetar?.nome}
+            </DialogTitle>
+            <DialogDescription className="text-xs text-on-surface-variant pt-1">
+              Uma nova senha provisória confidencial será gerada e enviada por e-mail.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 py-2">
+            <div className="p-3.5 bg-surface-container rounded-2xl border border-outline-variant/50 text-xs space-y-2">
+              <div className="flex items-center gap-2 text-on-surface font-medium">
+                <Mail className="w-4 h-4 text-primary shrink-0" />
+                <span className="truncate font-mono">{profissionalParaResetar?.email_usuario}</span>
+              </div>
+              <p className="text-[11px] text-on-surface-variant leading-relaxed">
+                O colaborador receberá imediatamente uma mensagem institucional com a nova credencial provisória de 10 dígitos e será obrigado a cadastrar uma nova senha pessoal no próximo login.
+              </p>
+            </div>
+          </div>
+
+          <div className="pt-2 flex items-center justify-end gap-2.5">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setModalResetOpen(false)}
+              className="rounded-full text-xs h-10 px-5 cursor-pointer"
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              disabled={resetando}
+              onClick={handleConfirmarReset}
+              className="rounded-full text-xs h-10 px-5 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-md shadow-primary/20 cursor-pointer"
+            >
+              {resetando ? 'Gerando e enviando...' : 'Confirmar e Enviar E-mail'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
+
