@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Sparkles,
   Plus,
@@ -8,12 +8,15 @@ import {
   KeyRound,
   CheckCircle2,
   Mail,
+  Edit2,
+  Trash2,
 } from 'lucide-react';
 import { api, Profissional } from '@/lib/api';
 import { LoadingState } from '@/components/atoms/LoadingState';
 import { EmptyState } from '@/components/atoms/EmptyState';
 import { SearchBar } from '@/components/molecules/SearchBar';
 import { NoSearchResultsState } from '@/components/atoms/NoSearchResultsState';
+import { DeleteButton } from '@/components/atoms/DeleteButton';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -37,8 +40,23 @@ export default function EquipePage() {
   const [formNome, setFormNome] = useState('');
   const [formCargo, setFormCargo] = useState('Hair Stylist');
   const [formEmail, setFormEmail] = useState('');
-  const [formCorHex] = useState('#7C3AED');
+  const [formCorHex, setFormCorHex] = useState('#7C3AED');
   const [saving, setSaving] = useState(false);
+
+  // Modal Edição Membro
+  const [modalEditOpen, setModalEditOpen] = useState(false);
+  const [editingProfissional, setEditingProfissional] = useState<Profissional | null>(null);
+  const [editNome, setEditNome] = useState('');
+  const [editCargo, setEditCargo] = useState('Hair Stylist');
+  const [editCorHex, setEditCorHex] = useState('#7C3AED');
+  const [editAtivo, setEditAtivo] = useState(true);
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [erroEdit, setErroEdit] = useState<string | null>(null);
+
+  // Modal Exclusão Membro
+  const [modalDeleteOpen, setModalDeleteOpen] = useState(false);
+  const [profissionalParaExcluir, setProfissionalParaExcluir] = useState<Profissional | null>(null);
+  const [excluindo, setExcluindo] = useState(false);
 
   // Modal Criar Acesso
   const [modalAcessoOpen, setModalAcessoOpen] = useState(false);
@@ -48,17 +66,15 @@ export default function EquipePage() {
   const [savingAcesso, setSavingAcesso] = useState(false);
   const [resultadoAcesso, setResultadoAcesso] = useState<{ email: string; senha_temp?: string } | null>(null);
 
-  const carregarEquipe = useCallback(async () => {
+  const recarregarEquipe = async () => {
     try {
       const data = await api.getEquipe();
       const list = Array.isArray(data) ? data : data.results || [];
       setEquipe(list);
     } catch (err) {
       console.error('Erro ao carregar equipe:', err);
-    } finally {
-      setLoading(false);
     }
-  }, []);
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -112,11 +128,66 @@ export default function EquipePage() {
       setFormNome('');
       setFormCargo('Hair Stylist');
       setFormEmail('');
-      await carregarEquipe();
+      await recarregarEquipe();
     } catch (err) {
       console.error('Erro ao criar profissional:', err);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const abrirModalEditar = (prof: Profissional) => {
+    setEditingProfissional(prof);
+    setEditNome(prof.nome);
+    setEditCargo(prof.cargo);
+    setEditCorHex(prof.cor_hex || '#7C3AED');
+    setEditAtivo(prof.ativo);
+    setErroEdit(null);
+    setModalEditOpen(true);
+  };
+
+  const handleSalvarEdicao = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingProfissional) return;
+    setSavingEdit(true);
+    setErroEdit(null);
+    try {
+      await api.updateProfissional(editingProfissional.id, {
+        nome: editNome.trim(),
+        cargo: editCargo.trim(),
+        cor_hex: editCorHex,
+        ativo: editAtivo,
+      });
+      setModalEditOpen(false);
+      await recarregarEquipe();
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setErroEdit(err.message);
+      } else {
+        setErroEdit('Erro ao atualizar profissional.');
+      }
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
+  const abrirModalExcluir = (prof: Profissional) => {
+    setProfissionalParaExcluir(prof);
+    setModalDeleteOpen(true);
+  };
+
+  const handleConfirmarExclusao = async () => {
+    if (!profissionalParaExcluir) return;
+    setExcluindo(true);
+    try {
+      await api.deleteProfissional(profissionalParaExcluir.id);
+      setModalDeleteOpen(false);
+      setProfissionalParaExcluir(null);
+      await recarregarEquipe();
+    } catch (err) {
+      console.error('Erro ao remover profissional:', err);
+    } finally {
+      setExcluindo(false);
     }
   };
 
@@ -135,7 +206,7 @@ export default function EquipePage() {
     try {
       const res = await api.criarAcessoProfissional(profissionalAcesso.id, emailAcesso, perfilAcesso);
       setResultadoAcesso({ email: res.email, senha_temp: res.senha_temp });
-      await carregarEquipe();
+      await recarregarEquipe();
     } catch (err) {
       console.error('Erro ao criar acesso:', err);
     } finally {
@@ -155,7 +226,7 @@ export default function EquipePage() {
             Equipe do Ateliê
           </h1>
           <p className="text-xs sm:text-sm text-on-surface-variant">
-            Gerencie profissionais do ateliê e credenciais de acesso ao sistema.
+            Gerencie profissionais do ateliê, cores de identificação e credenciais de acesso ao sistema.
           </p>
         </div>
 
@@ -195,42 +266,61 @@ export default function EquipePage() {
               className="p-6 rounded-3xl bg-surface-container-lowest border border-outline-variant/60 shadow-sm hover:shadow-md hover:border-primary/40 transition-all flex flex-col justify-between"
             >
               <div>
-                <div className="flex items-start gap-4 mb-4">
-                  <Avatar className="w-14 h-14 border-2 shadow-sm shrink-0" style={{ borderColor: prof.cor_hex }}>
-                    <AvatarImage src={prof.foto_url} alt={prof.nome} />
-                    <AvatarFallback className="bg-primary/10 text-primary font-bold text-base">
-                      {prof.nome.slice(0, 2).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
+                <div className="flex items-start justify-between gap-2 mb-4">
+                  <div className="flex items-start gap-3.5 min-w-0">
+                    <Avatar className="w-14 h-14 border-2 shadow-sm shrink-0" style={{ borderColor: prof.cor_hex }}>
+                      <AvatarImage src={prof.foto_url} alt={prof.nome} />
+                      <AvatarFallback className="bg-primary/10 text-primary font-bold text-base">
+                        {prof.nome.slice(0, 2).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
 
-                  <div className="min-w-0 flex-1">
-                    <h3 className="text-base font-semibold text-on-surface font-heading truncate">
-                      {prof.nome}
-                    </h3>
-                    <p className="text-xs text-primary font-medium truncate mt-0.5">
-                      {prof.cargo}
-                    </p>
-                    <div className="flex items-center gap-1.5 mt-1.5">
-                      <span className="w-2 h-2 rounded-full" style={{ backgroundColor: prof.cor_hex }} />
-                      <span className="text-[11px] text-on-surface-variant font-medium">
-                        Equipe Camilo Studio
-                      </span>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="text-base font-semibold text-on-surface font-heading truncate">
+                        {prof.nome}
+                      </h3>
+                      <p className="text-xs text-primary font-medium truncate mt-0.5">
+                        {prof.cargo}
+                      </p>
+                      <div className="flex items-center gap-1.5 mt-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: prof.cor_hex }} />
+                        <span className="text-[11px] text-on-surface-variant font-medium">
+                          {prof.ativo ? 'Ativo na Equipe' : 'Inativo'}
+                        </span>
+                      </div>
                     </div>
+                  </div>
 
-                    {/* E-mail de Login do Profissional */}
-                    {prof.email_usuario ? (
-                      <div className="flex items-center gap-1.5 text-xs text-on-surface-variant font-mono mt-2.5 bg-surface-container-low px-2.5 py-1.5 rounded-xl border border-outline-variant/30">
-                        <Mail className="w-3.5 h-3.5 text-primary shrink-0" />
-                        <span className="truncate">{prof.email_usuario}</span>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-1.5 text-[11px] text-on-surface-variant/60 mt-2.5">
-                        <Mail className="w-3 h-3 text-on-surface-variant/40 shrink-0" />
-                        <span className="italic">Login ainda não configurado</span>
-                      </div>
-                    )}
+                  {/* Ações de Edição e Exclusão */}
+                  <div className="flex items-center gap-1 shrink-0">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => abrirModalEditar(prof)}
+                      className="rounded-full h-8 w-8 text-on-surface-variant hover:text-primary hover:bg-primary/10"
+                      title="Editar profissional"
+                    >
+                      <Edit2 className="w-3.5 h-3.5" />
+                    </Button>
+                    <DeleteButton
+                      onDelete={() => abrirModalExcluir(prof)}
+                      title="Remover profissional"
+                    />
                   </div>
                 </div>
+
+                {/* E-mail de Login do Profissional */}
+                {prof.email_usuario ? (
+                  <div className="flex items-center gap-1.5 text-xs text-on-surface-variant font-mono mb-4 bg-surface-container-low px-2.5 py-1.5 rounded-xl border border-outline-variant/30">
+                    <Mail className="w-3.5 h-3.5 text-primary shrink-0" />
+                    <span className="truncate">{prof.email_usuario}</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1.5 text-[11px] text-on-surface-variant/60 mb-4">
+                    <Mail className="w-3 h-3 text-on-surface-variant/40 shrink-0" />
+                    <span className="italic">Login ainda não configurado</span>
+                  </div>
+                )}
               </div>
 
               {/* Status de Acesso */}
@@ -287,13 +377,26 @@ export default function EquipePage() {
                 required
                 value={formCargo}
                 onChange={(e) => setFormCargo(e.target.value)}
-                placeholder="Ex: Colorista Master"
+                placeholder="Ex: Hair Stylist & Terapeuta Capilar"
                 className="rounded-full h-11 text-xs"
               />
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs font-medium text-on-surface-variant">E-mail de Login (opcional)</Label>
+              <Label className="text-xs font-medium text-on-surface-variant">Cor de Identificação</Label>
+              <div className="flex items-center gap-3">
+                <Input
+                  type="color"
+                  value={formCorHex}
+                  onChange={(e) => setFormCorHex(e.target.value)}
+                  className="w-12 h-10 p-1 rounded-xl cursor-pointer"
+                />
+                <span className="text-xs font-mono text-on-surface-variant">{formCorHex}</span>
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-on-surface-variant">E-mail Profissional (Opcional)</Label>
               <Input
                 type="email"
                 value={formEmail}
@@ -324,6 +427,130 @@ export default function EquipePage() {
               </Button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* MODAL EDITAR PROFISSIONAL */}
+      <Dialog open={modalEditOpen} onOpenChange={setModalEditOpen}>
+        <DialogContent className="sm:max-w-md rounded-3xl p-6 bg-surface-container-lowest border-outline-variant">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-bold text-on-surface font-heading flex items-center gap-2">
+              <Edit2 className="w-5 h-5 text-primary" />
+              Editar Membro da Equipe
+            </DialogTitle>
+            <DialogDescription className="text-xs text-on-surface-variant">
+              Atualize nome, cargo e cor de identificação do profissional.
+            </DialogDescription>
+          </DialogHeader>
+
+          {erroEdit && (
+            <div className="p-3.5 rounded-2xl bg-destructive/10 border border-destructive/20 text-destructive text-xs">
+              {erroEdit}
+            </div>
+          )}
+
+          <form onSubmit={handleSalvarEdicao} className="space-y-4 pt-2">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-on-surface-variant">Nome Completo</Label>
+              <Input
+                required
+                value={editNome}
+                onChange={(e) => setEditNome(e.target.value)}
+                className="rounded-full h-11 text-xs"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-on-surface-variant">Cargo / Especialidade</Label>
+              <Input
+                required
+                value={editCargo}
+                onChange={(e) => setEditCargo(e.target.value)}
+                className="rounded-full h-11 text-xs"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-on-surface-variant">Cor de Identificação</Label>
+              <div className="flex items-center gap-3">
+                <Input
+                  type="color"
+                  value={editCorHex}
+                  onChange={(e) => setEditCorHex(e.target.value)}
+                  className="w-12 h-10 p-1 rounded-xl cursor-pointer"
+                />
+                <span className="text-xs font-mono text-on-surface-variant">{editCorHex}</span>
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-on-surface-variant">Status</Label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="editAtivoCheckbox"
+                  checked={editAtivo}
+                  onChange={(e) => setEditAtivo(e.target.checked)}
+                  className="rounded text-primary focus:ring-primary h-4 w-4"
+                />
+                <label htmlFor="editAtivoCheckbox" className="text-xs text-on-surface cursor-pointer">
+                  Profissional ativo e disponível para agendamentos
+                </label>
+              </div>
+            </div>
+
+            <div className="pt-3 flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setModalEditOpen(false)}
+                className="rounded-full text-xs h-10 px-5"
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                disabled={savingEdit}
+                className="rounded-full text-xs h-10 px-6 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-md shadow-primary/20 cursor-pointer"
+              >
+                {savingEdit ? 'Salvando...' : 'Salvar Alterações'}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* DIÁLOGO DE CONFIRMAÇÃO DE EXCLUSÃO DE PROFISSIONAL */}
+      <Dialog open={modalDeleteOpen} onOpenChange={setModalDeleteOpen}>
+        <DialogContent className="sm:max-w-md rounded-3xl p-6 bg-surface-container-lowest border-outline-variant">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-bold text-on-surface font-heading flex items-center gap-2 text-destructive">
+              <Trash2 className="w-5 h-5" />
+              Remover Profissional
+            </DialogTitle>
+            <DialogDescription className="text-xs text-on-surface-variant">
+              Tem certeza que deseja remover <strong>{profissionalParaExcluir?.nome}</strong> da equipe do ateliê?
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="pt-3 flex items-center justify-end gap-2.5">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setModalDeleteOpen(false)}
+              className="rounded-full text-xs h-10 px-5"
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              disabled={excluindo}
+              onClick={handleConfirmarExclusao}
+              className="rounded-full text-xs h-10 px-5 bg-destructive hover:bg-destructive/90 text-white font-semibold cursor-pointer"
+            >
+              {excluindo ? 'Removendo...' : 'Confirmar Remoção'}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
 
