@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Eye, EyeOff, Loader2, Sparkles, Lock, Mail } from 'lucide-react';
+import { Eye, EyeOff, Loader2, Lock, Mail } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { Logo } from '@/components/atoms/Logo';
 import { Button } from '@/components/ui/button';
@@ -33,11 +33,6 @@ export default function LoginPage() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handlePreFillAdmin = () => {
-    setEmail('admin@camilostudio.com');
-    setPassword('admin123');
   };
 
   return (
@@ -138,18 +133,6 @@ export default function LoginPage() {
             )}
           </Button>
         </form>
-
-        {/* Atalho Demo */}
-        <div className="mt-8 pt-6 border-t border-outline-variant/40 flex flex-col items-center">
-          <button
-            type="button"
-            onClick={handlePreFillAdmin}
-            className="inline-flex items-center gap-1.5 text-xs text-on-surface-variant hover:text-primary transition-colors cursor-pointer"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-primary" />
-            <span>Preencher como Administrador (Demo)</span>
-          </button>
-        </div>
       </div>
     </div>
   );
