@@ -63,3 +63,39 @@ class AgendamentoTests(TestCase):
 
         ag.refresh_from_db()
         self.assertEqual(ag.status, 'confirmado')
+
+    def test_editar_agendamento(self):
+        ag = Agendamento.objects.create(
+            cliente=self.cliente,
+            profissional=self.prof,
+            data_hora_inicio=timezone.now(),
+            data_hora_fim=timezone.now() + timedelta(hours=1),
+            valor_total=280.00,
+            status='agendado'
+        )
+        ag.servicos.add(self.servico)
+
+        novo_horario = timezone.now() + timedelta(days=1)
+        res = self.client.patch(f'/api/agendamentos/{ag.id}/', {
+            'observacoes': 'Cliente prefere cafe sem acucar',
+            'status': 'em_atendimento',
+            'data_hora_inicio': novo_horario.isoformat(),
+        }, format='json')
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        ag.refresh_from_db()
+        self.assertEqual(ag.observacoes, 'Cliente prefere cafe sem acucar')
+        self.assertEqual(ag.status, 'em_atendimento')
+
+    def test_excluir_agendamento(self):
+        ag = Agendamento.objects.create(
+            cliente=self.cliente,
+            profissional=self.prof,
+            data_hora_inicio=timezone.now(),
+            data_hora_fim=timezone.now() + timedelta(hours=1),
+            valor_total=280.00,
+            status='agendado'
+        )
+        res = self.client.delete(f'/api/agendamentos/{ag.id}/')
+        self.assertEqual(res.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(Agendamento.objects.filter(id=ag.id).exists())

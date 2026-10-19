@@ -47,3 +47,16 @@ class AgendamentoSerializer(serializers.ModelSerializer):
                 agendamento.valor_total = total
                 agendamento.save()
         return agendamento
+
+    def update(self, instance, validated_data):
+        servicos = validated_data.pop('servicos', None)
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        if servicos is not None:
+            instance.servicos.set(servicos)
+            if 'valor_total' not in self.initial_data:
+                total = sum(s.preco for s in servicos)
+                instance.valor_total = total
+                instance.save()
+        return instance

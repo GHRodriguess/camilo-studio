@@ -220,6 +220,11 @@ export const api = {
       body: JSON.stringify(data),
     }),
 
+  deleteAgendamento: (id: number) =>
+    fetchApi(`/agendamentos/${id}/`, {
+      method: 'DELETE',
+    }),
+
   gerarLinkWhatsapp: (id: number) =>
     fetchApi<{
       agendamento_id: number;
@@ -296,6 +301,11 @@ export const api = {
       body: JSON.stringify(data),
     }),
 
+  deleteProfissional: (id: number) =>
+    fetchApi(`/profissionais/${id}/`, {
+      method: 'DELETE',
+    }),
+
   criarAcessoProfissional: (id: number, email: string, perfil: 'admin' | 'profissional' = 'profissional') =>
     fetchApi<{ message: string; email: string; senha_temp?: string }>(`/profissionais/${id}/criar-acesso/`, {
       method: 'POST',
@@ -312,6 +322,17 @@ export const api = {
     fetchApi<FormulaQuimica>('/formulas/', {
       method: 'POST',
       body: JSON.stringify(data),
+    }),
+
+  updateFormula: (id: number, data: Partial<FormulaQuimica>) =>
+    fetchApi<FormulaQuimica>(`/formulas/${id}/`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }),
+
+  deleteFormula: (id: number) =>
+    fetchApi(`/formulas/${id}/`, {
+      method: 'DELETE',
     }),
 
   // Configurações
