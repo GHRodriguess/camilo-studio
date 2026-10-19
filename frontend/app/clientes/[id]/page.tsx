@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, use } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   ArrowLeft,
   Phone,
@@ -13,9 +14,13 @@ import {
   Check,
   Heart,
   AlertCircle,
+  Edit2,
+  Trash2,
 } from 'lucide-react';
 import { api, Cliente, FormulaQuimica, Profissional } from '@/lib/api';
+import { formatarTelefone, validarTelefone } from '@/lib/masks';
 import { LoadingState } from '@/components/atoms/LoadingState';
+import { DeleteButton } from '@/components/atoms/DeleteButton';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -29,12 +34,20 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 export default function ClienteDetalhesPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const router = useRouter();
   const { id } = use(params);
   const clienteId = parseInt(id, 10);
 
@@ -43,8 +56,26 @@ export default function ClienteDetalhesPage({
   const [equipe, setEquipe] = useState<Profissional[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Modal Nova Fórmula
+  // Modal Edição Cliente
+  const [modalEditClienteOpen, setModalEditClienteOpen] = useState(false);
+  const [editNome, setEditNome] = useState('');
+  const [editTelefone, setEditTelefone] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [editDataNascimento, setEditDataNascimento] = useState('');
+  const [editSigno, setEditSigno] = useState('');
+  const [editTags, setEditTags] = useState('');
+  const [editAlergias, setEditAlergias] = useState('');
+  const [editPreferencias, setEditPreferencias] = useState('');
+  const [savingCliente, setSavingCliente] = useState(false);
+  const [erroEditCliente, setErroEditCliente] = useState<string | null>(null);
+
+  // Modal Exclusão Cliente
+  const [modalDeleteClienteOpen, setModalDeleteClienteOpen] = useState(false);
+  const [excluindoCliente, setExcluindoCliente] = useState(false);
+
+  // Modal Fórmula (Nova ou Edição)
   const [modalFormulaOpen, setModalFormulaOpen] = useState(false);
+  const [editingFormula, setEditingFormula] = useState<FormulaQuimica | null>(null);
   const [formProcedimento, setFormProcedimento] = useState('Mechas Globais Pérola');
   const [formProfissional, setFormProfissional] = useState<number | ''>('');
   const [formDataAplicacao, setFormDataAplicacao] = useState('');
@@ -55,6 +86,11 @@ export default function ClienteDetalhesPage({
   const [formObservacoes, setFormObservacoes] = useState('');
   const [savingFormula, setSavingFormula] = useState(false);
   const [copiadoId, setCopiadoId] = useState<number | null>(null);
+
+  // Modal Exclusão Fórmula
+  const [modalDeleteFormulaOpen, setModalDeleteFormulaOpen] = useState(false);
+  const [formulaParaExcluir, setFormulaParaExcluir] = useState<FormulaQuimica | null>(null);
+  const [excluindoFormula, setExcluindoFormula] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -93,11 +129,106 @@ export default function ClienteDetalhesPage({
     }
   };
 
+  const abrirModalEditarCliente = () => {
+    if (!cliente) return;
+    setEditNome(cliente.nome);
+    setEditTelefone(formatarTelefone(cliente.telefone));
+    setEditEmail(cliente.email || '');
+    setEditDataNascimento(cliente.data_nascimento || '');
+    setEditSigno(cliente.signo || '');
+    setEditTags(cliente.tags || '');
+    setEditAlergias(cliente.observacoes_alergias || '');
+    setEditPreferencias(cliente.preferencias_sensoriais || '');
+    setErroEditCliente(null);
+    setModalEditClienteOpen(true);
+  };
+
+  const handleSalvarCliente = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!cliente) return;
+    if (editNome.trim().length < 3) {
+      setErroEditCliente('O nome deve conter pelo menos 3 caracteres.');
+      return;
+    }
+
+    const validacaoTel = validarTelefone(editTelefone);
+    if (!validacaoTel.valido) {
+      setErroEditCliente(validacaoTel.mensagem || 'WhatsApp / Telefone inválido.');
+      return;
+    }
+
+    setSavingCliente(true);
+    setErroEditCliente(null);
+
+    try {
+      const atualizado = await api.updateCliente(cliente.id, {
+        nome: editNome.trim(),
+        telefone: editTelefone.trim(),
+        email: editEmail.trim(),
+        data_nascimento: editDataNascimento || undefined,
+        signo: editSigno.trim(),
+        tags: editTags.trim(),
+        observacoes_alergias: editAlergias.trim(),
+        preferencias_sensoriais: editPreferencias.trim(),
+      });
+      setCliente(atualizado);
+      setModalEditClienteOpen(false);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setErroEditCliente(err.message);
+      } else {
+        setErroEditCliente('Erro ao atualizar perfil da cliente.');
+      }
+    } finally {
+      setSavingCliente(false);
+    }
+  };
+
+  const handleConfirmarExclusaoCliente = async () => {
+    if (!cliente) return;
+    setExcluindoCliente(true);
+    try {
+      await api.deleteCliente(cliente.id);
+      setModalDeleteClienteOpen(false);
+      router.push('/clientes');
+    } catch (err) {
+      console.error('Erro ao excluir cliente:', err);
+    } finally {
+      setExcluindoCliente(false);
+    }
+  };
+
+  const abrirModalNovaFormula = () => {
+    setEditingFormula(null);
+    setFormProcedimento('Mechas Globais Pérola');
+    setFormProfissional('');
+    setFormDataAplicacao(new Date().toISOString().split('T')[0]);
+    setFormFormulaTexto('');
+    setFormVolumagemOx('20 vol');
+    setFormTempoPausa('45');
+    setFormFundo('Fundo 9 / 10');
+    setFormObservacoes('');
+    setModalFormulaOpen(true);
+  };
+
+  const abrirModalEditarFormula = (formula: FormulaQuimica) => {
+    setEditingFormula(formula);
+    setFormProcedimento(formula.procedimento);
+    setFormProfissional(formula.profissional ?? '');
+    setFormDataAplicacao(formula.data_aplicacao);
+    setFormFormulaTexto(formula.formula_texto);
+    setFormVolumagemOx(formula.volumagem_ox);
+    setFormTempoPausa(String(formula.tempo_pausa_minutos));
+    setFormFundo(formula.fundo_clareamento || '');
+    setFormObservacoes(formula.observacoes || '');
+    setModalFormulaOpen(true);
+  };
+
   const handleSalvarFormula = async (e: React.FormEvent) => {
     e.preventDefault();
     setSavingFormula(true);
     try {
-      await api.createFormula({
+      const payload = {
         cliente: clienteId,
         profissional: formProfissional ? Number(formProfissional) : undefined,
         data_aplicacao: formDataAplicacao,
@@ -107,15 +238,40 @@ export default function ClienteDetalhesPage({
         tempo_pausa_minutos: parseInt(formTempoPausa, 10) || 45,
         fundo_clareamento: formFundo,
         observacoes: formObservacoes,
-      });
+      };
+
+      if (editingFormula) {
+        await api.updateFormula(editingFormula.id, payload);
+      } else {
+        await api.createFormula(payload);
+      }
+
       setModalFormulaOpen(false);
-      setFormFormulaTexto('');
-      setFormObservacoes('');
       await recarregarFormulas();
     } catch (err) {
       console.error('Erro ao salvar fórmula:', err);
     } finally {
       setSavingFormula(false);
+    }
+  };
+
+  const abrirModalExcluirFormula = (formula: FormulaQuimica) => {
+    setFormulaParaExcluir(formula);
+    setModalDeleteFormulaOpen(true);
+  };
+
+  const handleConfirmarExclusaoFormula = async () => {
+    if (!formulaParaExcluir) return;
+    setExcluindoFormula(true);
+    try {
+      await api.deleteFormula(formulaParaExcluir.id);
+      setModalDeleteFormulaOpen(false);
+      setFormulaParaExcluir(null);
+      await recarregarFormulas();
+    } catch (err) {
+      console.error('Erro ao excluir fórmula:', err);
+    } finally {
+      setExcluindoFormula(false);
     }
   };
 
@@ -148,7 +304,7 @@ export default function ClienteDetalhesPage({
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
       {/* NAVEGAÇÃO TOPO */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <Link
           href="/clientes"
           className="inline-flex items-center gap-1.5 text-xs text-on-surface-variant hover:text-primary transition-colors cursor-pointer"
@@ -157,14 +313,32 @@ export default function ClienteDetalhesPage({
           <span>Voltar para Clientes</span>
         </Link>
 
-        {/* ÚNICO BOTÃO PRIMÁRIO */}
-        <Button
-          onClick={() => setModalFormulaOpen(true)}
-          className="rounded-full h-10 px-5 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs shadow-md shadow-primary/20 cursor-pointer"
-        >
-          <Plus className="w-3.5 h-3.5 mr-1" />
-          Nova Fórmula Química
-        </Button>
+        <div className="flex items-center gap-2">
+          {/* Botão Secundário: Editar Perfil */}
+          <Button
+            variant="outline"
+            onClick={abrirModalEditarCliente}
+            className="rounded-full h-10 px-4 text-xs border border-outline-variant hover:border-primary/50 text-on-surface cursor-pointer gap-1.5"
+          >
+            <Edit2 className="w-3.5 h-3.5 text-primary" />
+            <span>Editar Perfil</span>
+          </Button>
+
+          {/* Botão Excluir Cliente */}
+          <DeleteButton
+            onDelete={() => setModalDeleteClienteOpen(true)}
+            title="Excluir cadastro desta cliente"
+          />
+
+          {/* ÚNICO BOTÃO PRIMÁRIO */}
+          <Button
+            onClick={abrirModalNovaFormula}
+            className="rounded-full h-10 px-5 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs shadow-md shadow-primary/20 cursor-pointer"
+          >
+            <Plus className="w-3.5 h-3.5 mr-1" />
+            Nova Fórmula Química
+          </Button>
+        </div>
       </div>
 
       {/* CARTÃO PERFIL EDITORIAL */}
@@ -195,14 +369,24 @@ export default function ClienteDetalhesPage({
               </div>
 
               <div className="flex flex-wrap items-center gap-3 text-xs text-on-surface-variant font-mono">
-                <span className="flex items-center gap-1">
+                <a
+                  href={`https://wa.me/55${cliente.telefone.replace(/\D/g, '')}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-1 hover:text-emerald-600 transition-colors"
+                >
                   <Phone className="w-3 h-3 text-primary" />
                   {cliente.telefone}
-                </span>
+                </a>
                 {cliente.email && (
                   <span className="flex items-center gap-1">
                     <Mail className="w-3 h-3 text-primary" />
                     {cliente.email}
+                  </span>
+                )}
+                {cliente.data_nascimento && (
+                  <span className="text-on-surface-variant">
+                    🎂 {new Date(cliente.data_nascimento + 'T12:00:00').toLocaleDateString('pt-BR')}
                   </span>
                 )}
                 {cliente.signo && (
@@ -241,12 +425,12 @@ export default function ClienteDetalhesPage({
               <span>Preferências Sensoriais & Cuidados</span>
             </div>
             <p className="text-xs text-on-surface leading-relaxed">
-              {cliente.preferencias_sensoriais || 'Nenhuma preferência cadastrada.'}
+              {cliente.preferencias_sensoriais || 'Nenhuma preferência personalizada cadastrada.'}
             </p>
           </div>
 
           <div className="p-4 rounded-2xl bg-surface-container-low/80 border border-outline-variant/30 space-y-1">
-            <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-600">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-700">
               <AlertCircle className="w-3.5 h-3.5" />
               <span>Alergias & Restrições Químicas</span>
             </div>
@@ -279,7 +463,7 @@ export default function ClienteDetalhesPage({
               Registre a proporção e oxidante utilizados para manter a consistência de cor da cliente.
             </p>
             <Button
-              onClick={() => setModalFormulaOpen(true)}
+              onClick={abrirModalNovaFormula}
               variant="outline"
               size="sm"
               className="rounded-full mt-4 text-xs"
@@ -309,25 +493,45 @@ export default function ClienteDetalhesPage({
                     )}
                   </div>
 
-                  {/* Ação de Copiar Fórmula */}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleCopiarFormula(formula)}
-                    className="rounded-full text-xs h-8 px-3.5 border-primary/30 text-primary hover:bg-primary/5 cursor-pointer shrink-0"
-                  >
-                    {copiadoId === formula.id ? (
-                      <>
-                        <Check className="w-3.5 h-3.5 mr-1 text-emerald-600" />
-                        Fórmula Copiada!
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="w-3.5 h-3.5 mr-1" />
-                        Copiar Fórmula
-                      </>
-                    )}
-                  </Button>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {/* Ação de Copiar Fórmula */}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleCopiarFormula(formula)}
+                      className="rounded-full text-xs h-8 px-3 border-primary/30 text-primary hover:bg-primary/5 cursor-pointer"
+                    >
+                      {copiadoId === formula.id ? (
+                        <>
+                          <Check className="w-3.5 h-3.5 mr-1 text-emerald-600" />
+                          Copiada!
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3.5 h-3.5 mr-1" />
+                          Copiar
+                        </>
+                      )}
+                    </Button>
+
+                    {/* Editar Fórmula */}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => abrirModalEditarFormula(formula)}
+                      className="rounded-full text-xs h-8 px-3 border-outline-variant hover:border-primary/50 text-on-surface cursor-pointer gap-1"
+                      title="Editar Fórmula"
+                    >
+                      <Edit2 className="w-3.5 h-3.5 text-primary" />
+                      <span>Editar</span>
+                    </Button>
+
+                    {/* Excluir Fórmula */}
+                    <DeleteButton
+                      onDelete={() => abrirModalExcluirFormula(formula)}
+                      title="Excluir fórmula química"
+                    />
+                  </div>
                 </div>
 
                 {/* Proporções Químicas */}
@@ -362,12 +566,184 @@ export default function ClienteDetalhesPage({
         )}
       </div>
 
-      {/* MODAL NOVA FÓRMULA QUÍMICA */}
+      {/* MODAL DE EDIÇÃO DE PERFIL DA CLIENTE */}
+      <Dialog open={modalEditClienteOpen} onOpenChange={setModalEditClienteOpen}>
+        <DialogContent className="sm:max-w-xl rounded-3xl p-6 bg-surface-container-lowest border-outline-variant max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-bold text-on-surface font-heading flex items-center gap-2">
+              <Edit2 className="w-5 h-5 text-primary" />
+              Editar Perfil da Cliente
+            </DialogTitle>
+            <DialogDescription className="text-xs text-on-surface-variant">
+              Atualize as informações cadastrais, de contato e preferências da cliente.
+            </DialogDescription>
+          </DialogHeader>
+
+          {erroEditCliente && (
+            <div className="p-3.5 rounded-2xl bg-destructive/10 border border-destructive/20 text-destructive text-xs">
+              {erroEditCliente}
+            </div>
+          )}
+
+          <form onSubmit={handleSalvarCliente} className="space-y-4 pt-2">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-on-surface-variant">Nome Completo *</Label>
+              <Input
+                required
+                value={editNome}
+                onChange={(e) => setEditNome(e.target.value)}
+                placeholder="Ex: Beatriz Albuquerque"
+                className="rounded-full h-11 text-xs"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium text-on-surface-variant">WhatsApp / Telefone *</Label>
+                <Input
+                  required
+                  value={editTelefone}
+                  onChange={(e) => setEditTelefone(formatarTelefone(e.target.value, editTelefone))}
+                  maxLength={15}
+                  placeholder="(11) 98765-4321"
+                  className="rounded-full h-11 text-xs font-mono"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium text-on-surface-variant">E-mail</Label>
+                <Input
+                  type="email"
+                  value={editEmail}
+                  onChange={(e) => setEditEmail(e.target.value)}
+                  placeholder="cliente@email.com"
+                  className="rounded-full h-11 text-xs"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium text-on-surface-variant">Data de Nascimento</Label>
+                <Input
+                  type="date"
+                  value={editDataNascimento}
+                  onChange={(e) => setEditDataNascimento(e.target.value)}
+                  className="rounded-full h-11 text-xs"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium text-on-surface-variant">Signo</Label>
+                <Input
+                  value={editSigno}
+                  onChange={(e) => setEditSigno(e.target.value)}
+                  placeholder="Ex: Leão, Virgem"
+                  className="rounded-full h-11 text-xs"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-on-surface-variant">
+                Tags de Perfil (separadas por vírgula)
+              </Label>
+              <Input
+                value={editTags}
+                onChange={(e) => setEditTags(e.target.value)}
+                placeholder="Ex: VIP, Mechas, Frequente"
+                className="rounded-full h-11 text-xs"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-on-surface-variant">
+                Alergias & Restrições Químicas
+              </Label>
+              <Textarea
+                value={editAlergias}
+                onChange={(e) => setEditAlergias(e.target.value)}
+                placeholder="Sensibilidade ao pó descolorante, amônia..."
+                className="rounded-2xl text-xs resize-none"
+                rows={2}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-on-surface-variant">
+                Preferências Sensoriais & Cuidados
+              </Label>
+              <Textarea
+                value={editPreferencias}
+                onChange={(e) => setEditPreferencias(e.target.value)}
+                placeholder="Café espresso sem açúcar, água morna no lavatório..."
+                className="rounded-2xl text-xs resize-none"
+                rows={2}
+              />
+            </div>
+
+            <div className="pt-3 flex items-center justify-end gap-2.5">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setModalEditClienteOpen(false)}
+                className="rounded-full text-xs h-10 px-5"
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                disabled={savingCliente}
+                className="rounded-full text-xs h-10 px-6 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-md shadow-primary/20 cursor-pointer"
+              >
+                {savingCliente ? 'Salvando...' : 'Salvar Alterações'}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* DIÁLOGO DE CONFIRMAÇÃO DE EXCLUSÃO DA CLIENTE */}
+      <Dialog open={modalDeleteClienteOpen} onOpenChange={setModalDeleteClienteOpen}>
+        <DialogContent className="sm:max-w-md rounded-3xl p-6 bg-surface-container-lowest border-outline-variant">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-bold text-on-surface font-heading flex items-center gap-2 text-destructive">
+              <Trash2 className="w-5 h-5" />
+              Excluir Cadastro da Cliente
+            </DialogTitle>
+            <DialogDescription className="text-xs text-on-surface-variant">
+              Tem certeza que deseja remover o cadastro de <strong>{cliente.nome}</strong>? Todas as fórmulas químicas e registros vinculados serão excluídos permanentemente.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="pt-3 flex items-center justify-end gap-2.5">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setModalDeleteClienteOpen(false)}
+              className="rounded-full text-xs h-10 px-5"
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              disabled={excluindoCliente}
+              onClick={handleConfirmarExclusaoCliente}
+              className="rounded-full text-xs h-10 px-5 bg-destructive hover:bg-destructive/90 text-white font-semibold cursor-pointer"
+            >
+              {excluindoCliente ? 'Excluindo...' : 'Confirmar Exclusão'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* MODAL FÓRMULA QUÍMICA (CRIAR / EDITAR) */}
       <Dialog open={modalFormulaOpen} onOpenChange={setModalFormulaOpen}>
         <DialogContent className="sm:max-w-lg rounded-3xl p-6 bg-surface-container-lowest border-outline-variant max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-lg font-bold text-on-surface font-heading">
-              Registrar Fórmula Técnica
+            <DialogTitle className="text-lg font-bold text-on-surface font-heading flex items-center gap-2">
+              <FlaskConical className="w-5 h-5 text-primary" />
+              {editingFormula ? 'Editar Fórmula Técnica' : 'Registrar Fórmula Técnica'}
             </DialogTitle>
             <DialogDescription className="text-xs text-on-surface-variant">
               Guarde proporções de pós, colorações, tonalizantes e oxidantes para este atendimento.
@@ -381,12 +757,32 @@ export default function ClienteDetalhesPage({
                 required
                 value={formProcedimento}
                 onChange={(e) => setFormProcedimento(e.target.value)}
-                placeholder="Ex: Morena Iluminada Caramelo"
+                placeholder="Ex: Mechas Globais Pérola"
                 className="rounded-full h-11 text-xs"
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium text-on-surface-variant">Profissional Responsável</Label>
+                <Select
+                  value={formProfissional ? String(formProfissional) : 'sem_especifico'}
+                  onValueChange={(val) => setFormProfissional(val === 'sem_especifico' ? '' : Number(val))}
+                >
+                  <SelectTrigger className="rounded-full h-11 text-xs">
+                    <SelectValue placeholder="Selecione..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="sem_especifico" className="text-xs">Equipe Camilo Studio</SelectItem>
+                    {equipe.map((p) => (
+                      <SelectItem key={p.id} value={String(p.id)} className="text-xs">
+                        {p.nome} ({p.cargo})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
               <div className="space-y-1.5">
                 <Label className="text-xs font-medium text-on-surface-variant">Data da Aplicação</Label>
                 <Input
@@ -397,41 +793,25 @@ export default function ClienteDetalhesPage({
                   className="rounded-full h-11 text-xs"
                 />
               </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-on-surface-variant">Profissional</Label>
-                <select
-                  value={formProfissional}
-                  onChange={(e) => setFormProfissional(e.target.value ? Number(e.target.value) : '')}
-                  className="w-full h-11 px-3 rounded-full border border-outline-variant bg-surface-container-lowest text-xs text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
-                >
-                  <option value="">Selecione o profissional...</option>
-                  {equipe.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.nome}
-                    </option>
-                  ))}
-                </select>
-              </div>
             </div>
 
             <div className="space-y-1.5">
               <Label className="text-xs font-medium text-on-surface-variant">
-                Fórmula & Gramaturas (Proporções exatas)
+                Mistura Quimica / Gramaturas (Exato)
               </Label>
               <Textarea
-                rows={3}
                 required
+                rows={3}
                 value={formFormulaTexto}
                 onChange={(e) => setFormFormulaTexto(e.target.value)}
-                placeholder="Ex: Blondme (40g) + OX 20 vol (80g)&#10;Tonalização: 9.5-1 (25g) + Gel Ativador (50g)"
-                className="rounded-2xl text-xs font-mono resize-none"
+                placeholder="Ex: BlondorPlex 1:2 (40g pó + 80g OX)&#10;Tonalização: 9V (20g) + 9GI (20g)"
+                className="rounded-2xl font-mono text-xs"
               />
             </div>
 
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-on-surface-variant">Oxidante (OX)</Label>
+                <Label className="text-xs font-medium text-on-surface-variant">Volumagem OX</Label>
                 <Input
                   value={formVolumagemOx}
                   onChange={(e) => setFormVolumagemOx(e.target.value)}
@@ -452,7 +832,7 @@ export default function ClienteDetalhesPage({
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-on-surface-variant">Fundo Alcançado</Label>
+                <Label className="text-xs font-medium text-on-surface-variant">Fundo de Clareamento</Label>
                 <Input
                   value={formFundo}
                   onChange={(e) => setFormFundo(e.target.value)}
@@ -463,19 +843,17 @@ export default function ClienteDetalhesPage({
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs font-medium text-on-surface-variant">
-                Observações do Fio & Cuidados Pós-Química
-              </Label>
+              <Label className="text-xs font-medium text-on-surface-variant">Observações / Resultado</Label>
               <Textarea
                 rows={2}
                 value={formObservacoes}
                 onChange={(e) => setFormObservacoes(e.target.value)}
-                placeholder="Cabelo manteve elasticidade, uso de cronograma nas pontas..."
-                className="rounded-2xl text-xs resize-none"
+                placeholder="Resultado bege frio com excelente integridade da fibra."
+                className="rounded-2xl text-xs"
               />
             </div>
 
-            <div className="pt-3 flex justify-end gap-2">
+            <div className="pt-3 flex items-center justify-end gap-2.5">
               <Button
                 type="button"
                 variant="outline"
@@ -487,12 +865,58 @@ export default function ClienteDetalhesPage({
               <Button
                 type="submit"
                 disabled={savingFormula}
-                className="rounded-full text-xs h-10 px-6 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-md shadow-primary/20"
+                className="rounded-full text-xs h-10 px-6 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-md shadow-primary/20 cursor-pointer"
               >
-                {savingFormula ? 'Salvando...' : 'Salvar Fórmula'}
+                {savingFormula ? 'Salvando...' : editingFormula ? 'Salvar Alterações' : 'Salvar Fórmula no Dossiê'}
               </Button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* DIÁLOGO DE CONFIRMAÇÃO DE EXCLUSÃO DE FÓRMULA */}
+      <Dialog open={modalDeleteFormulaOpen} onOpenChange={setModalDeleteFormulaOpen}>
+        <DialogContent className="sm:max-w-md rounded-3xl p-6 bg-surface-container-lowest border-outline-variant">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-bold text-on-surface font-heading flex items-center gap-2 text-destructive">
+              <Trash2 className="w-5 h-5" />
+              Excluir Fórmula Química
+            </DialogTitle>
+            <DialogDescription className="text-xs text-on-surface-variant">
+              Tem certeza que deseja remover esta fórmula química? O histórico técnico deste procedimento não poderá ser recuperado.
+            </DialogDescription>
+          </DialogHeader>
+
+          {formulaParaExcluir && (
+            <div className="p-4 rounded-2xl bg-surface-container-low border border-outline-variant/40 space-y-1 text-xs">
+              <p className="font-semibold text-on-surface">{formulaParaExcluir.procedimento}</p>
+              <p className="text-on-surface-variant">
+                Data: {new Date(formulaParaExcluir.data_aplicacao).toLocaleDateString('pt-BR')}
+              </p>
+              <p className="text-on-surface-variant font-mono truncate">
+                {formulaParaExcluir.formula_texto}
+              </p>
+            </div>
+          )}
+
+          <div className="pt-3 flex items-center justify-end gap-2.5">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setModalDeleteFormulaOpen(false)}
+              className="rounded-full text-xs h-10 px-5"
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              disabled={excluindoFormula}
+              onClick={handleConfirmarExclusaoFormula}
+              className="rounded-full text-xs h-10 px-5 bg-destructive hover:bg-destructive/90 text-white font-semibold cursor-pointer"
+            >
+              {excluindoFormula ? 'Excluindo...' : 'Confirmar Exclusão'}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { api } from '@/lib/api';
+import { formatarTelefone, validarTelefone } from '@/lib/masks';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -19,6 +20,13 @@ export default function NovoClientePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
+    const validacao = validarTelefone(telefone);
+    if (!validacao.valido) {
+      setError(validacao.mensagem || 'WhatsApp / Telefone inválido.');
+      return;
+    }
+
     setSaving(true);
 
     try {
@@ -85,7 +93,8 @@ export default function NovoClientePage() {
             <Input
               required
               value={telefone}
-              onChange={(e) => setTelefone(e.target.value)}
+              onChange={(e) => setTelefone(formatarTelefone(e.target.value, telefone))}
+              maxLength={15}
               placeholder="(11) 98765-4321"
               className="rounded-full h-12 text-sm font-mono"
             />
