@@ -134,34 +134,12 @@ export default function ConfiguracoesPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs font-medium text-on-surface-variant">Slogan / Assinatura</Label>
-              <Input
-                value={slogan}
-                onChange={(e) => setSlogan(e.target.value)}
-                className="rounded-full h-11 text-xs"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
               <Label className="text-xs font-medium text-on-surface-variant">WhatsApp Comercial</Label>
               <Input
                 required
                 value={telefone}
                 onChange={(e) => setTelefone(e.target.value)}
                 className="rounded-full h-11 text-xs font-mono"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium text-on-surface-variant">E-mail Institucional</Label>
-              <Input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="rounded-full h-11 text-xs"
               />
             </div>
           </div>
@@ -172,15 +150,6 @@ export default function ConfiguracoesPage() {
               required
               value={endereco}
               onChange={(e) => setEndereco(e.target.value)}
-              className="rounded-full h-11 text-xs"
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <Label className="text-xs font-medium text-on-surface-variant">Horário de Funcionamento</Label>
-            <Input
-              value={horario}
-              onChange={(e) => setHorario(e.target.value)}
               className="rounded-full h-11 text-xs"
             />
           </div>
