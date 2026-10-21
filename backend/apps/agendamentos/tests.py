@@ -204,4 +204,50 @@ class AgendamentoTests(TestCase):
         }, format='json')
         self.assertEqual(res_create.status_code, status.HTTP_201_CREATED)
 
+    def test_filtros_backend_e_paginacao(self):
+        agora = timezone.now()
+        ag_futuro = Agendamento.objects.create(
+            cliente=self.cliente,
+            profissional=self.prof,
+            data_hora_inicio=agora + timedelta(days=1),
+            data_hora_fim=agora + timedelta(days=1, hours=1),
+            status='agendado'
+        )
+        ag_hoje_concluido = Agendamento.objects.create(
+            cliente=self.cliente,
+            profissional=self.prof,
+            data_hora_inicio=agora.replace(hour=8, minute=0, second=0, microsecond=0),
+            data_hora_fim=agora.replace(hour=9, minute=0, second=0, microsecond=0),
+            status='concluido'
+        )
+        ag_falta = Agendamento.objects.create(
+            cliente=self.cliente,
+            profissional=self.prof,
+            data_hora_inicio=agora - timedelta(days=2),
+            data_hora_fim=agora - timedelta(days=2, hours=-1),
+            status='nao_compareceu'
+        )
+
+        res_prox = self.client.get('/api/agendamentos/?filtro=proximos')
+        self.assertEqual(res_prox.status_code, status.HTTP_200_OK)
+        ids_prox = [item['id'] for item in res_prox.data['results']]
+        self.assertIn(ag_futuro.id, ids_prox)
+        self.assertNotIn(ag_hoje_concluido.id, ids_prox)
+        self.assertNotIn(ag_falta.id, ids_prox)
+
+        res_hoje = self.client.get('/api/agendamentos/?filtro=hoje')
+        self.assertEqual(res_hoje.status_code, status.HTTP_200_OK)
+        ids_hoje = [item['id'] for item in res_hoje.data['results']]
+        self.assertIn(ag_hoje_concluido.id, ids_hoje)
+        self.assertNotIn(ag_futuro.id, ids_hoje)
+
+        res_conc = self.client.get('/api/agendamentos/?filtro=concluido')
+        self.assertEqual(res_conc.status_code, status.HTTP_200_OK)
+        ids_conc = [item['id'] for item in res_conc.data['results']]
+        self.assertIn(ag_hoje_concluido.id, ids_conc)
+        self.assertNotIn(ag_futuro.id, ids_conc)
+
+        self.assertIn('count', res_prox.data)
+        self.assertIn('results', res_prox.data)
+
 

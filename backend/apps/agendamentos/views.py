@@ -1,24 +1,72 @@
 import datetime
 import urllib.parse
+from django.db.models import Q
 from django.utils import timezone
 from rest_framework import viewsets, permissions, status, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.pagination import PageNumberPagination
 from django_filters.rest_framework import DjangoFilterBackend
 from .models import Agendamento
 from .serializers import AgendamentoSerializer
 from apps.notificacoes.models import ConfiguracaoAtelie, NotificacaoWhatsApp
 
 
+class AgendamentoPagination(PageNumberPagination):
+    page_size = 20
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
+    def get_paginated_response(self, data):
+        return Response({
+            'count': self.page.paginator.count,
+            'total_pages': self.page.paginator.num_pages,
+            'page_size': self.get_page_size(self.request),
+            'current_page': self.page.number,
+            'next': self.get_next_link(),
+            'previous': self.get_previous_link(),
+            'results': data
+        })
+
+
 class AgendamentoViewSet(viewsets.ModelViewSet):
     queryset = Agendamento.objects.all().select_related('cliente', 'profissional').prefetch_related('servicos')
     serializer_class = AgendamentoSerializer
+    pagination_class = AgendamentoPagination
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['status', 'profissional', 'cliente']
     search_fields = ['cliente__nome', 'profissional__nome', 'observacoes']
     ordering_fields = ['data_hora_inicio', 'status', 'criado_em']
     ordering = ['data_hora_inicio']
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        filtro = self.request.query_params.get('filtro')
+        if not filtro:
+            return qs
+
+        agora = timezone.now()
+        hoje_local = timezone.localdate()
+
+        if filtro == 'proximos':
+            return qs.exclude(status__in=['concluido', 'cancelado', 'nao_compareceu']).filter(
+                Q(status='em_atendimento') |
+                Q(data_hora_fim__gte=agora) |
+                Q(data_hora_inicio__date=hoje_local) |
+                Q(data_hora_inicio__gte=agora)
+            )
+
+        if filtro == 'hoje':
+            return qs.filter(data_hora_inicio__date=hoje_local)
+
+        if filtro == 'todos':
+            return qs
+
+        if filtro in dict(Agendamento.STATUS_CHOICES):
+            return qs.filter(status=filtro)
+
+        return qs
 
     def _montar_dados_whatsapp(self, agendamento, config):
         cliente_nome = agendamento.cliente.nome

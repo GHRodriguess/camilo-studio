@@ -127,8 +127,21 @@ export const api = {
     }),
 
   // Agendamentos
-  getAgendamentos: (params?: string) =>
-    fetchApi<{ count: number; results: Agendamento[] } | Agendamento[]>(`/agendamentos/${params ? `?${params}` : ''}`),
+  getAgendamentos: (params?: string | import('./types').AgendamentoQueryParams) => {
+    let query = '';
+    if (typeof params === 'string') {
+      query = params ? `?${params}` : '';
+    } else if (params && typeof params === 'object') {
+      const sp = new URLSearchParams();
+      if (params.filtro) sp.set('filtro', params.filtro);
+      if (params.search) sp.set('search', params.search);
+      if (params.page) sp.set('page', String(params.page));
+      if (params.page_size) sp.set('page_size', String(params.page_size));
+      const qs = sp.toString();
+      query = qs ? `?${qs}` : '';
+    }
+    return fetchApi<import('./types').PaginatedResponse<Agendamento>>(`/agendamentos/${query}`);
+  },
 
   getAgendamento: (id: number) => fetchApi<Agendamento>(`/agendamentos/${id}/`),
 

@@ -1,21 +1,23 @@
 'use client';
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { CalendarDays, Plus } from 'lucide-react';
 import { api, Agendamento } from '@/lib/api';
+import { useAgenda } from '@/lib/useAgenda';
 import { LoadingState } from '@/components/atoms/LoadingState';
 import { EmptyState } from '@/components/atoms/EmptyState';
 import { NoSearchResultsState } from '@/components/atoms/NoSearchResultsState';
 import { SearchBar } from '@/components/molecules/SearchBar';
+import { PaginationControls } from '@/components/molecules/PaginationControls';
 import { AgendamentoCard } from '@/components/organisms/AgendamentoCard';
 import { AgendaModals, WhatsappPayload } from '@/components/organisms/AgendaModals';
 
 const STATUS_FILTERS = [
+  { key: 'proximos', label: 'Próximos' },
+  { key: 'hoje', label: 'Hoje' },
   { key: 'todos', label: 'Todos' },
-  { key: 'agendado', label: 'Agendados' },
-  { key: 'confirmado', label: 'Confirmados WhatsApp' },
   { key: 'em_atendimento', label: 'Em Atendimento' },
   { key: 'concluido', label: 'Finalizados' },
   { key: 'nao_compareceu', label: 'Não Compareceu' },
@@ -59,7 +61,7 @@ function StatusFilterChips({ ativo, onSelect }: { ativo: string; onSelect: (k: s
 interface ListProps {
   loading: boolean;
   total: number;
-  filtrados: Agendamento[];
+  agendamentos: Agendamento[];
   search: string;
   onClear: () => void;
   onNovo: () => void;
@@ -72,25 +74,25 @@ interface ListProps {
 }
 
 function AgendaList(props: ListProps) {
-  const { loading, total, filtrados, search, onClear, onNovo, onIniciar, onConcluir, onNaoCompareceu, onWhatsapp, onEditar, onExcluir } = props;
-  if (loading) return <LoadingState message="Carregando atendimentos da agenda..." />;
+  const { loading, total, agendamentos, search, onClear, onNovo, onIniciar, onConcluir, onNaoCompareceu, onWhatsapp, onEditar, onExcluir } = props;
+  if (loading && agendamentos.length === 0) return <LoadingState message="Carregando atendimentos da agenda..." />;
   if (total === 0) {
+    if (search) {
+      return <NoSearchResultsState searchTerm={search} onClear={onClear} />;
+    }
     return (
       <EmptyState
         icon={CalendarDays}
         title="Nenhum agendamento encontrado"
-        description="A grade de horários está livre. Comece marcando um novo atendimento."
+        description="A grade de horários está livre para este filtro. Comece marcando um novo atendimento."
         actionLabel="Marcar Primeiro Atendimento"
         onAction={onNovo}
       />
     );
   }
-  if (filtrados.length === 0) {
-    return <NoSearchResultsState searchTerm={search} onClear={onClear} />;
-  }
   return (
     <div className="space-y-4">
-      {filtrados.map((ag) => (
+      {agendamentos.map((ag) => (
         <AgendamentoCard
           key={ag.id}
           ag={ag}
@@ -108,10 +110,21 @@ function AgendaList(props: ListProps) {
 
 export default function AgendaPage() {
   const router = useRouter();
-  const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [statusAtivo, setStatusAtivo] = useState('todos');
+  const {
+    agendamentos,
+    totalCount,
+    totalPages,
+    page,
+    setPage,
+    pageSize,
+    loading,
+    search,
+    setSearch,
+    statusAtivo,
+    setStatusAtivo,
+    recarregar,
+  } = useAgenda();
+
   const [modalWhatsappOpen, setModalWhatsappOpen] = useState(false);
   const [payloadWhatsapp, setPayloadWhatsapp] = useState<WhatsappPayload | null>(null);
   const [modalEditOpen, setModalEditOpen] = useState(false);
@@ -119,55 +132,48 @@ export default function AgendaPage() {
   const [modalDeleteOpen, setModalDeleteOpen] = useState(false);
   const [agendamentoParaExcluir, setAgendamentoParaExcluir] = useState<Agendamento | null>(null);
 
-  const recarregar = async () => {
-    try {
-      const data = await api.getAgendamentos();
-      setAgendamentos(Array.isArray(data) ? data : data.results || []);
-    } finally {
-      setLoading(false);
-    }
+  const handleClear = () => {
+    setSearch('');
+    setStatusAtivo('proximos');
+    setPage(1);
   };
 
-  useEffect(() => {
-    recarregar();
-    const timer = setInterval(recarregar, 60000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const agendamentosFiltrados = useMemo(() => {
-    return agendamentos.filter((ag) => {
-      const matchStatus = statusAtivo === 'todos' || ag.status === statusAtivo;
-      const clienteNome = ag.cliente_detalhes?.nome || '';
-      const matchSearch = clienteNome.toLowerCase().includes(search.toLowerCase()) || (ag.observacoes && ag.observacoes.toLowerCase().includes(search.toLowerCase()));
-      return matchStatus && matchSearch;
-    });
-  }, [agendamentos, statusAtivo, search]);
+  const handleAbrirWhatsapp = async (id: number) => {
+    const data = await api.gerarLinkWhatsapp(id);
+    setPayloadWhatsapp(data);
+    setModalWhatsappOpen(true);
+  };
 
   return (
     <div className="space-y-6">
       <AgendaHeader />
       <div className="space-y-3.5">
         <SearchBar value={search} onChange={setSearch} placeholder="Buscar agendamento por cliente ou observações..." />
-        <StatusFilterChips ativo={statusAtivo} onSelect={setStatusAtivo} />
+        <StatusFilterChips ativo={statusAtivo} onSelect={(k) => { setStatusAtivo(k); setPage(1); }} />
       </div>
 
       <AgendaList
         loading={loading}
-        total={agendamentos.length}
-        filtrados={agendamentosFiltrados}
+        total={totalCount}
+        agendamentos={agendamentos}
         search={search}
-        onClear={() => { setSearch(''); setStatusAtivo('todos'); }}
+        onClear={handleClear}
         onNovo={() => router.push('/agenda/novo')}
         onIniciar={async (id) => { await api.iniciarAgendamento(id); await recarregar(); }}
         onConcluir={async (id) => { await api.concluirAgendamento(id); await recarregar(); }}
         onNaoCompareceu={async (id) => { await api.marcarNaoCompareceuAgendamento(id); await recarregar(); }}
-        onWhatsapp={async (id) => {
-          const data = await api.gerarLinkWhatsapp(id);
-          setPayloadWhatsapp(data);
-          setModalWhatsappOpen(true);
-        }}
+        onWhatsapp={handleAbrirWhatsapp}
         onEditar={(item) => { setEditingAgendamento(item); setModalEditOpen(true); }}
         onExcluir={(item) => { setAgendamentoParaExcluir(item); setModalDeleteOpen(true); }}
+      />
+
+      <PaginationControls
+        page={page}
+        totalPages={totalPages}
+        totalCount={totalCount}
+        pageSize={pageSize}
+        onPageChange={setPage}
+        loading={loading}
       />
 
       <AgendaModals

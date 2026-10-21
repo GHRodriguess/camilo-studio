@@ -98,3 +98,20 @@ export interface ConfiguracaoAtelie {
   template_lembrete: string;
   politica_cancelamento: string;
 }
+
+export interface PaginatedResponse<T> {
+  count: number;
+  total_pages?: number;
+  page_size?: number;
+  current_page?: number;
+  next: string | null;
+  previous: string | null;
+  results: T[];
+}
+
+export interface AgendamentoQueryParams {
+  filtro?: string;
+  search?: string;
+  page?: number;
+  page_size?: number;
+}
