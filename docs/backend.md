@@ -81,3 +81,18 @@ backend/
 - **ViewSets:** Preferir `ModelViewSet` e `ReadOnlyModelViewSet` com filtros nativos (`django-filter`).
 - **Respostas:** Manter paginação consistente (`PageNumberPagination` com metadados de total, página atual e itens).
 - **Datas e Horários:** Todas as datas devem ser tratadas em UTC no backend e convertidas para o fuso local (`America/Sao_Paulo`) na serialização/frontend.
+
+---
+
+## 6. Validações Estruturais e Testes Obrigatórios
+
+O backend possui uma suíte de testes de AST (`apps/usuarios/test_code_structure.py`) e um comando dedicado (`check_structure`):
+
+- **Verificação Rápida:** `python manage.py check_structure` (executa a análise de integridade em ~0.05s).
+- **Suíte Completa:** `python manage.py test` (inclui os testes estruturais e testes de integração/regras de negócio).
+- **Regras Imutáveis:**
+  - Máximo de 300 linhas por arquivo `.py`. Sem exceções.
+  - Máximo de 50 linhas por função ou método. Sem exceções.
+  - Máximo de 6 parâmetros por função.
+  - Proibição de `print()` solto nas apps de negócio (usar `logging`).
+  - Nomenclatura em `snake_case.py`.

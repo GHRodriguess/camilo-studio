@@ -1,4 +1,6 @@
+import datetime
 import urllib.parse
+from django.utils import timezone
 from rest_framework import serializers
 from .models import Agendamento
 from apps.clientes.serializers import ClienteSerializer
@@ -15,6 +17,8 @@ class AgendamentoSerializer(serializers.ModelSerializer):
     profissional_detalhes = ProfissionalSerializer(source='profissional', read_only=True)
     servicos_detalhes = ServicoSerializer(source='servicos', many=True, read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
+    indicador_temporal = serializers.CharField(read_only=True)
+    tempo_relativo_display = serializers.CharField(read_only=True)
 
     class Meta:
         model = Agendamento
@@ -30,11 +34,49 @@ class AgendamentoSerializer(serializers.ModelSerializer):
             'data_hora_fim',
             'status',
             'status_display',
+            'indicador_temporal',
+            'tempo_relativo_display',
             'valor_total',
             'observacoes',
             'criado_em',
             'atualizado_em',
         ]
+
+    def validate(self, attrs):
+        inicio = attrs.get('data_hora_inicio')
+        fim = attrs.get('data_hora_fim')
+
+        if self.instance:
+            if inicio and not fim:
+                duracao = self.instance.data_hora_fim - self.instance.data_hora_inicio
+                fim = inicio + duracao
+                attrs['data_hora_fim'] = fim
+            elif not inicio:
+                inicio = self.instance.data_hora_inicio
+            if not fim:
+                fim = self.instance.data_hora_fim
+
+        if inicio and fim and fim <= inicio:
+            raise serializers.ValidationError({
+                'data_hora_fim': 'O horário de término deve ser posterior ao horário de início.'
+            })
+
+        agora_tolerancia = timezone.now() - datetime.timedelta(minutes=5)
+
+        # Regra inviolável: não agendar no passado
+        if not self.instance:
+            if inicio and inicio < agora_tolerancia:
+                raise serializers.ValidationError({
+                    'data_hora_inicio': 'Não é permitido criar um agendamento anterior ao horário atual.'
+                })
+        else:
+            # Se for edição e estiver mudando o horário de início
+            if 'data_hora_inicio' in attrs and inicio < agora_tolerancia:
+                raise serializers.ValidationError({
+                    'data_hora_inicio': 'Não é permitido reagendar para um horário anterior ao momento atual.'
+                })
+
+        return attrs
 
     def create(self, validated_data):
         servicos = validated_data.pop('servicos', [])

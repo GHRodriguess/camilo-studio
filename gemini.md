@@ -82,7 +82,25 @@ camilo-studio/
   - **Envio de E-mail:** Configuração via SMTP do Django com remetente e credenciais mantidas exclusivamente em variáveis de ambiente no `.env`.
   - **Fluxo de Usuários & Senhas:** Conta admin inicial criada via script/comando; criação de novos usuários com senha aleatória segura enviada por e-mail; redefinição de senha obrigatória no 1º login; páginas dedicadas para troca forçada e "Esqueci minha senha".
 
-### 3.4. Regras Operacionais para o Agente de IA
+### 3.4. Validações Estruturais e Testes Obrigatórios
+- **Execução Mandatória:** O agente de IA e qualquer desenvolvedor são **estritamente obrigados a rodar e passar todos os testes estruturais e de integridade antes de considerar qualquer tarefa concluída ou commitar alterações**. Não é permitido abrir PR/MR ou dar tarefa por pronta com violações estruturais pendentes.
+- **Frontend (`cd frontend`):**
+  - Comando obrigatório: `npm run lint` (executa `eslint` e `npm run test:structure`).
+  - **Tamanho Máximo de Arquivos:** Máximo de 300 linhas para componentes e bibliotecas; 400 linhas para páginas (`app/**/page.tsx`). Sem exceções de arquivos legados.
+  - **Tamanho Máximo de Funções:** Máximo de 50 linhas para utilitários/hooks e 100 linhas para componentes React com JSX. Sem exceções.
+  - **Fronteiras de Atomic Design:** Átomos não importam moléculas, organismos ou templates; moléculas não importam organismos ou templates; organismos não importam templates.
+  - **Tokens de Design (`lint:tokens`):** Proibição total de cores hardcoded (`#hex`, `rgb`, `hsl`) em classes CSS. Toda cor deve vir dos tokens de `globals.css`.
+  - **Limpeza de Código:** Zero chamadas de `console.log` e declarações `debugger` em código de produção.
+  - **Nomenclatura:** Componentes devem usar estritamente `PascalCase.tsx`.
+- **Backend (`cd backend`):**
+  - Comandos obrigatórios: `python manage.py check_structure` (verificação instantânea em ~0.05s) e `python manage.py test` (suíte completa de testes).
+  - **Tamanho Máximo de Arquivos:** Máximo de 300 linhas por arquivo `.py`. Sem exceções.
+  - **Tamanho Máximo de Funções:** Máximo de 50 linhas por função ou método. Sem exceções.
+  - **Parâmetros por Função:** Máximo de 6 parâmetros por função/método.
+  - **Limpeza de Código:** Zero chamadas de `print()` em código de apps (usar `logging` ou respostas DRF).
+  - **Nomenclatura:** Todos os arquivos e diretórios de apps devem seguir `snake_case.py`.
+
+### 3.5. Regras Operacionais para o Agente de IA
 - **Proibido criar arquivos de setup na mão:**
   - Para criar o projeto Django ou novos apps, execute sempre os comandos oficiais (`django-admin startproject`, `python manage.py startapp`).
   - Para adicionar componentes/moléculas de interface, execute sempre o CLI do shadcn (`npx shadcn@latest add <componente>`) e depois adapte os tokens aos de `globals.css`.

@@ -1,103 +1,18 @@
+import type {
+  User,
+  Servico,
+  Profissional,
+  Cliente,
+  FormulaQuimica,
+  Agendamento,
+  ConfiguracaoAtelie,
+} from './types';
+import { extractApiErrorMessage } from './errors';
+
+export * from './types';
+export { extractApiErrorMessage } from './errors';
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
-
-export interface User {
-  id: number;
-  email: string;
-  nome: string;
-  perfil: 'admin' | 'profissional';
-  telefone?: string;
-  deve_redefinir_senha: boolean;
-  is_staff: boolean;
-  is_active: boolean;
-}
-
-export interface Servico {
-  id: number;
-  nome: string;
-  categoria: string;
-  descricao: string;
-  duracao_minutos: number;
-  preco: string | number;
-  ativo: boolean;
-}
-
-export interface Profissional {
-  id: number;
-  nome: string;
-  cargo: string;
-  cor_hex: string;
-  foto_url?: string;
-  servicos?: number[];
-  servicos_detalhes?: Servico[];
-  ativo: boolean;
-  usuario?: number | null;
-  email_usuario?: string | null;
-  possui_acesso?: boolean;
-  usuario_ativo?: boolean;
-  total_historico?: number;
-}
-
-export interface FormulaQuimica {
-  id: number;
-  cliente: number;
-  nome_cliente?: string;
-  profissional?: number;
-  profissional_detalhes?: Profissional;
-  data_aplicacao: string;
-  procedimento: string;
-  formula_texto: string;
-  volumagem_ox: string;
-  tempo_pausa_minutos: number;
-  fundo_clareamento?: string;
-  observacoes?: string;
-  foto_resultado_url?: string;
-}
-
-export interface Cliente {
-  id: number;
-  nome: string;
-  telefone: string;
-  email?: string;
-  data_nascimento?: string;
-  signo?: string;
-  foto_url?: string;
-  tags?: string;
-  observacoes_alergias?: string;
-  preferencias_sensoriais?: string;
-  total_investido: string | number;
-  visitas_realizadas: number;
-  ultima_visita?: string;
-  formulas?: FormulaQuimica[];
-}
-
-export interface Agendamento {
-  id: number;
-  cliente: number;
-  cliente_detalhes?: Cliente;
-  profissional?: number | null;
-  profissional_detalhes?: Profissional | null;
-  servicos: number[];
-  servicos_detalhes?: Servico[];
-  data_hora_inicio: string;
-  data_hora_fim: string;
-  status: 'agendado' | 'confirmado' | 'em_atendimento' | 'concluido' | 'cancelado';
-  status_display?: string;
-  valor_total: string | number;
-  observacoes?: string;
-}
-
-export interface ConfiguracaoAtelie {
-  id: number;
-  nome_atelie: string;
-  slogan: string;
-  telefone: string;
-  email: string;
-  endereco: string;
-  horario_funcionamento: string;
-  template_confirmacao: string;
-  template_lembrete: string;
-  politica_cancelamento: string;
-}
 
 function getToken(): string | null {
   if (typeof window === 'undefined') return null;
@@ -126,76 +41,6 @@ export function setStoredUser(user: User | null) {
   } else {
     localStorage.removeItem('camilo_user');
   }
-}
-
-/**
- * Extrai de forma limpa e amigável as mensagens de erro retornadas pela API (Django REST Framework),
- * evitando exibir JSON bruto como {"non_field_errors": ["..."]} na interface.
- */
-export function extractApiErrorMessage(errorData: unknown): string {
-  if (!errorData) {
-    return 'Ocorreu um erro inesperado. Tente novamente.';
-  }
-
-  if (typeof errorData === 'string') {
-    // Se a string contiver JSON serializado, tenta decodificar para extrair o texto amigável
-    const trimmed = errorData.trim();
-    if ((trimmed.startsWith('{') && trimmed.endsWith('}')) || (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
-      try {
-        const parsed = JSON.parse(trimmed);
-        return extractApiErrorMessage(parsed);
-      } catch {
-        return errorData;
-      }
-    }
-    return errorData;
-  }
-
-  if (Array.isArray(errorData)) {
-    const messages = errorData
-      .map((item) => extractApiErrorMessage(item))
-      .filter((msg) => Boolean(msg && msg.trim()));
-    return messages.join('\n');
-  }
-
-  if (typeof errorData === 'object') {
-    const obj = errorData as Record<string, unknown>;
-
-    // 1. Mensagens diretas comuns
-    if (typeof obj.detail === 'string' && obj.detail.trim()) {
-      return obj.detail;
-    }
-    if (typeof obj.message === 'string' && obj.message.trim()) {
-      return obj.message;
-    }
-    if (typeof obj.error === 'string' && obj.error.trim()) {
-      return obj.error;
-    }
-
-    // 2. Erros globais do DRF (non_field_errors)
-    if (obj.non_field_errors) {
-      const nonFieldMsg = extractApiErrorMessage(obj.non_field_errors);
-      if (nonFieldMsg) return nonFieldMsg;
-    }
-
-    // 3. Erros por campo (ex: email, password, etc.)
-    const messages: string[] = [];
-    for (const [key, val] of Object.entries(obj)) {
-      if (key === 'detail' || key === 'message' || key === 'error' || key === 'non_field_errors') {
-        continue;
-      }
-      const fieldMsg = extractApiErrorMessage(val);
-      if (fieldMsg) {
-        messages.push(fieldMsg);
-      }
-    }
-
-    if (messages.length > 0) {
-      return messages.join('\n');
-    }
-  }
-
-  return 'Ocorreu um erro na requisição. Tente novamente.';
 }
 
 async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
@@ -287,6 +132,13 @@ export const api = {
 
   getAgendamento: (id: number) => fetchApi<Agendamento>(`/agendamentos/${id}/`),
 
+  getConflitosAgendamento: (inicio: string, fim: string, excludeId?: number) =>
+    fetchApi<Agendamento[]>(
+      `/agendamentos/conflitos/?inicio=${encodeURIComponent(inicio)}&fim=${encodeURIComponent(fim)}${
+        excludeId ? `&exclude_id=${excludeId}` : ''
+      }`
+    ),
+
   createAgendamento: (data: Partial<Agendamento>) =>
     fetchApi<Agendamento>('/agendamentos/', {
       method: 'POST',
@@ -317,6 +169,26 @@ export const api = {
 
   confirmarWhatsapp: (id: number) =>
     fetchApi<{ message: string; agendamento: Agendamento }>(`/agendamentos/${id}/confirmar-whatsapp/`, {
+      method: 'POST',
+    }),
+
+  iniciarAgendamento: (id: number) =>
+    fetchApi<Agendamento>(`/agendamentos/${id}/iniciar/`, {
+      method: 'POST',
+    }),
+
+  concluirAgendamento: (id: number) =>
+    fetchApi<Agendamento>(`/agendamentos/${id}/concluir/`, {
+      method: 'POST',
+    }),
+
+  marcarNaoCompareceuAgendamento: (id: number) =>
+    fetchApi<Agendamento>(`/agendamentos/${id}/nao-compareceu/`, {
+      method: 'POST',
+    }),
+
+  cancelarAgendamento: (id: number) =>
+    fetchApi<Agendamento>(`/agendamentos/${id}/cancelar/`, {
       method: 'POST',
     }),
 
