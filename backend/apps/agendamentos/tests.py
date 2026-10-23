@@ -195,9 +195,10 @@ class AgendamentoTests(TestCase):
         self.assertEqual(res_excl.status_code, status.HTTP_200_OK)
         self.assertEqual(len(res_excl.data), 0)
 
-        # Teste de criação não-restritiva (deve permitir salvar mesmo com conflito)
+        # Teste de criação concorrente de salão (deve permitir salvar clientes diferentes no mesmo horário)
+        cliente2 = Cliente.objects.create(nome='Marina Ruy Barbosa', telefone='(11) 97777-6666')
         res_create = self.client.post('/api/agendamentos/', {
-            'cliente': self.cliente.id,
+            'cliente': cliente2.id,
             'servicos': [self.servico.id],
             'data_hora_inicio': inicio_busca,
             'data_hora_fim': fim_busca,

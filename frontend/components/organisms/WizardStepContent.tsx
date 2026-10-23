@@ -42,6 +42,9 @@ export interface WizardStepContentProps {
   onGoToStep: (step: number) => void;
   conflitos?: Agendamento[];
   loadingConflitos?: boolean;
+  conflitoClienteSobreposicao?: Agendamento | null;
+  conflitoClienteMesmoDia?: Agendamento | null;
+  onEditarAgendamento?: (agendamento: Agendamento) => void;
 }
 
 export function WizardStepContent(props: WizardStepContentProps) {
@@ -92,6 +95,9 @@ export function WizardStepContent(props: WizardStepContentProps) {
         setObservacoes={props.setObservacoes}
         conflitos={props.conflitos}
         loadingConflitos={props.loadingConflitos}
+        conflitoClienteSobreposicao={props.conflitoClienteSobreposicao}
+        conflitoClienteMesmoDia={props.conflitoClienteMesmoDia}
+        onEditarAgendamento={props.onEditarAgendamento}
       />
     );
   }

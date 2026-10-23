@@ -152,6 +152,13 @@ export const api = {
       }`
     ),
 
+  getAgendamentosClienteNoDia: (clienteId: number, data: string, excludeId?: number) =>
+    fetchApi<Agendamento[]>(
+      `/agendamentos/cliente-dia/?cliente_id=${clienteId}&data=${encodeURIComponent(data)}${
+        excludeId ? `&exclude_id=${excludeId}` : ''
+      }`
+    ),
+
   createAgendamento: (data: Partial<Agendamento>) =>
     fetchApi<Agendamento>('/agendamentos/', {
       method: 'POST',

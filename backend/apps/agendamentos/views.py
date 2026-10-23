@@ -210,4 +210,35 @@ class AgendamentoViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(qs, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @action(detail=False, methods=['get'], url_path='cliente-dia')
+    def cliente_dia(self, request):
+        cliente_id = request.query_params.get('cliente_id')
+        data_str = request.query_params.get('data')
+        exclude_id = request.query_params.get('exclude_id')
+
+        if not cliente_id or not data_str:
+            return Response(
+                {'detail': 'Os parâmetros "cliente_id" e "data" são obrigatórios.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            data_parsed = datetime.date.fromisoformat(data_str)
+        except ValueError:
+            return Response(
+                {'detail': 'Formato de data inválido. Use AAAA-MM-DD.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        qs = self.get_queryset().filter(
+            cliente_id=cliente_id,
+            status__in=['agendado', 'confirmado', 'em_atendimento'],
+            data_hora_inicio__date=data_parsed,
+        )
+        if exclude_id:
+            qs = qs.exclude(id=exclude_id)
+
+        serializer = self.get_serializer(qs, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
 

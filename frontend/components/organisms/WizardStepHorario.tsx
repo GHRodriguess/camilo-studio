@@ -4,6 +4,7 @@ import React from 'react';
 import { Clock } from 'lucide-react';
 import { Agendamento } from '@/lib/api';
 import { AgendamentosConflitoAlert } from '@/components/organisms/AgendamentosConflitoAlert';
+import { ClienteConflitoCard } from '@/components/molecules/ClienteConflitoCard';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -49,9 +50,16 @@ interface StepHorarioProps {
   setObservacoes: (v: string) => void;
   conflitos?: Agendamento[];
   loadingConflitos?: boolean;
+  conflitoClienteSobreposicao?: Agendamento | null;
+  conflitoClienteMesmoDia?: Agendamento | null;
+  onEditarAgendamento?: (agendamento: Agendamento) => void;
 }
 
 export function WizardStepHorario(props: StepHorarioProps) {
+  const conflitosGerais = (props.conflitos || []).filter(
+    (c) => c.id !== props.conflitoClienteSobreposicao?.id
+  );
+
   return (
     <div className="space-y-4 sm:space-y-5 min-w-0">
       <div>
@@ -72,7 +80,9 @@ export function WizardStepHorario(props: StepHorarioProps) {
             required
             value={props.horaInicioStr}
             onChange={(e) => props.setHoraInicioStr(e.target.value)}
-            className={`rounded-full h-11 text-xs sm:text-sm font-mono ${props.isHorarioPassado ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+            className={`rounded-full h-11 text-xs sm:text-sm font-mono ${
+              props.isHorarioPassado || props.conflitoClienteSobreposicao ? 'border-destructive focus-visible:ring-destructive' : ''
+            }`}
           />
         </div>
       </div>
@@ -81,6 +91,22 @@ export function WizardStepHorario(props: StepHorarioProps) {
         <div className="p-3 rounded-2xl bg-destructive/10 border border-destructive/20 text-destructive text-xs">
           O horário selecionado é anterior ao momento atual. Por favor, selecione um horário futuro para continuar.
         </div>
+      )}
+
+      {props.conflitoClienteSobreposicao && props.onEditarAgendamento && (
+        <ClienteConflitoCard
+          tipo="sobreposicao"
+          agendamento={props.conflitoClienteSobreposicao}
+          onEditar={props.onEditarAgendamento}
+        />
+      )}
+
+      {!props.conflitoClienteSobreposicao && props.conflitoClienteMesmoDia && props.onEditarAgendamento && (
+        <ClienteConflitoCard
+          tipo="mesmo_dia"
+          agendamento={props.conflitoClienteMesmoDia}
+          onEditar={props.onEditarAgendamento}
+        />
       )}
 
       <div className="p-3.5 rounded-2xl bg-surface-container-low border border-outline-variant/40 flex items-center justify-between text-xs">
@@ -95,8 +121,8 @@ export function WizardStepHorario(props: StepHorarioProps) {
         </div>
       </div>
 
-      {props.conflitos && props.conflitos.length > 0 && (
-        <AgendamentosConflitoAlert conflitos={props.conflitos} loading={props.loadingConflitos} />
+      {conflitosGerais.length > 0 && (
+        <AgendamentosConflitoAlert conflitos={conflitosGerais} loading={props.loadingConflitos} />
       )}
 
       {props.mode === 'edit' && (

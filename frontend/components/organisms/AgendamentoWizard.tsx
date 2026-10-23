@@ -6,6 +6,13 @@ import { api, Cliente, Servico, Agendamento } from '@/lib/api';
 import { LoadingState } from '@/components/atoms/LoadingState';
 import { WizardStepContent } from '@/components/organisms/WizardStepContent';
 import { WizardStepper, WizardNavigation } from '@/components/organisms/WizardStepper';
+import { AgendamentoInlineEditDialog } from '@/components/organisms/AgendamentoInlineEditDialog';
+import {
+  useWizardFilters,
+  useWizardTotals,
+  useWizardConflitos,
+  useWizardClienteConflitos,
+} from '@/components/organisms/AgendamentoWizardHooks';
 
 export interface AgendamentoWizardProps {
   mode: 'create' | 'edit';
@@ -18,8 +25,12 @@ export interface AgendamentoWizardProps {
 function WizardModalHeader({ mode }: { mode: 'create' | 'edit' }) {
   return (
     <div className="pb-1 border-b border-outline-variant/40">
-      <span className="text-[10px] uppercase tracking-[0.2em] font-semibold text-primary">{mode === 'edit' ? 'Editar Atendimento' : 'Novo Atendimento'}</span>
-      <h2 className="text-lg sm:text-xl font-bold text-on-surface font-heading tracking-tight">{mode === 'edit' ? 'Editar Agendamento' : 'Marcar Agendamento'}</h2>
+      <span className="text-[10px] uppercase tracking-[0.2em] font-semibold text-primary">
+        {mode === 'edit' ? 'Editar Atendimento' : 'Novo Atendimento'}
+      </span>
+      <h2 className="text-lg sm:text-xl font-bold text-on-surface font-heading tracking-tight">
+        {mode === 'edit' ? 'Editar Agendamento' : 'Marcar Agendamento'}
+      </h2>
     </div>
   );
 }
@@ -80,110 +91,6 @@ function useWizardInit(mode: 'create' | 'edit', initialData?: Agendamento | null
   };
 }
 
-function useWizardFilters(
-  clientes: Cliente[],
-  servicos: Servico[],
-  clienteId: number | '',
-  searchCliente: string,
-  searchServico: string,
-  categoriaAtiva: string
-) {
-  const clienteSelecionada = useMemo(() => clientes.find((c) => c.id === clienteId) || null, [clientes, clienteId]);
-  const clientesFiltradas = useMemo(() => {
-    const q = searchCliente.trim().toLowerCase();
-    if (!q) return clientes;
-    const qDigits = q.replace(/\D/g, '');
-    return clientes.filter((c) => c.nome.toLowerCase().includes(q) || (qDigits ? c.telefone.replace(/\D/g, '').includes(qDigits) : false));
-  }, [clientes, searchCliente]);
-
-  const categoriasServicos = useMemo(() => {
-    const setCats = new Set<string>();
-    servicos.forEach((s) => { if (s.categoria) setCats.add(s.categoria); });
-    return ['Todas', ...Array.from(setCats)];
-  }, [servicos]);
-
-  const servicosFiltrados = useMemo(() => {
-    const q = searchServico.trim().toLowerCase();
-    return servicos.filter((s) => (categoriaAtiva === 'Todas' || s.categoria === categoriaAtiva) && (q === '' || s.nome.toLowerCase().includes(q)));
-  }, [servicos, searchServico, categoriaAtiva]);
-
-  return { clienteSelecionada, clientesFiltradas, categoriasServicos, servicosFiltrados };
-}
-
-function useWizardTotals(
-  servicos: Servico[],
-  servicosSelecionados: number[],
-  dataStr: string,
-  horaInicioStr: string,
-  horaReferencia: number,
-  clienteId: number | '',
-  currentStep: number
-) {
-  const totalMinutos = useMemo(() => servicos.filter((s) => servicosSelecionados.includes(s.id)).reduce((acc, s) => acc + s.duracao_minutos, 0), [servicos, servicosSelecionados]);
-  const valorTotal = useMemo(() => servicos.filter((s) => servicosSelecionados.includes(s.id)).reduce((acc, s) => acc + Number(s.preco), 0), [servicos, servicosSelecionados]);
-
-  const horaFimStr = useMemo(() => {
-    if (!horaInicioStr) return '';
-    const [h, m] = horaInicioStr.split(':').map(Number);
-    const totalM = (h * 60 + m + (totalMinutos || 60)) % (24 * 60);
-    return `${String(Math.floor(totalM / 60)).padStart(2, '0')}:${String(totalM % 60).padStart(2, '0')}`;
-  }, [horaInicioStr, totalMinutos]);
-
-  const isHorarioPassado = useMemo(() => {
-    if (!dataStr || !horaInicioStr) return false;
-    const sel = new Date(`${dataStr}T${horaInicioStr}:00`);
-    return isNaN(sel.getTime()) ? false : sel.getTime() < horaReferencia - 5 * 60 * 1000;
-  }, [dataStr, horaInicioStr, horaReferencia]);
-
-  const canAdvance = useMemo(() => {
-    if (currentStep === 1) return !!clienteId;
-    if (currentStep === 2) return servicosSelecionados.length > 0;
-    if (currentStep === 3) return !!dataStr && !!horaInicioStr && !isHorarioPassado;
-    return true;
-  }, [currentStep, clienteId, servicosSelecionados, dataStr, horaInicioStr, isHorarioPassado]);
-
-  return { totalMinutos, valorTotal, horaFimStr, isHorarioPassado, canAdvance };
-}
-
-function useWizardConflitos(
-  dataStr: string,
-  horaInicioStr: string,
-  totalMinutos: number,
-  initialId?: number
-) {
-  const [conflitos, setConflitos] = useState<Agendamento[]>([]);
-  const [loadingConflitos, setLoadingConflitos] = useState(false);
-
-  useEffect(() => {
-    const timer = setTimeout(async () => {
-      if (!dataStr || !horaInicioStr) {
-        setConflitos([]);
-        return;
-      }
-      try {
-        setLoadingConflitos(true);
-        const inicio = new Date(`${dataStr}T${horaInicioStr}:00`);
-        if (isNaN(inicio.getTime())) {
-          setConflitos([]);
-          return;
-        }
-        const duracao = totalMinutos || 60;
-        const fim = new Date(inicio.getTime() + duracao * 60000);
-        const res = await api.getConflitosAgendamento(inicio.toISOString(), fim.toISOString(), initialId);
-        setConflitos(Array.isArray(res) ? res : []);
-      } catch {
-        setConflitos([]);
-      } finally {
-        setLoadingConflitos(false);
-      }
-    }, 350);
-
-    return () => clearTimeout(timer);
-  }, [dataStr, horaInicioStr, totalMinutos, initialId]);
-
-  return { conflitos, loadingConflitos };
-}
-
 export function AgendamentoWizard({
   mode,
   initialData,
@@ -197,13 +104,15 @@ export function AgendamentoWizard({
   const [categoriaAtiva, setCategoriaAtiva] = useState('Todas');
   const hojeStr = useMemo(() => new Date().toISOString().split('T')[0], []);
   const [horaReferencia] = useState(() => Date.now());
+  const [agendamentoParaEditar, setAgendamentoParaEditar] = useState<Agendamento | null>(null);
 
   const w = useWizardInit(mode, initialData);
   const currentStep = (!w.clienteId && mode === 'create') ? 1 : w.currentStep;
   const setCurrentStep = w.setCurrentStep;
   const f = useWizardFilters(w.clientes, w.servicos, w.clienteId, searchCliente, searchServico, categoriaAtiva);
-  const t = useWizardTotals(w.servicos, w.servicosSelecionados, w.dataStr, w.horaInicioStr, horaReferencia, w.clienteId, currentStep);
-  const { conflitos, loadingConflitos } = useWizardConflitos(w.dataStr, w.horaInicioStr, t.totalMinutos, initialData?.id);
+  const { conflitos, loadingConflitos } = useWizardConflitos(w.dataStr, w.horaInicioStr, 60, initialData?.id);
+  const { conflitoSobreposicao, conflitoMesmoDia } = useWizardClienteConflitos(w.clienteId, w.dataStr, conflitos, initialData?.id);
+  const t = useWizardTotals(w.servicos, w.servicosSelecionados, w.dataStr, w.horaInicioStr, horaReferencia, w.clienteId, currentStep, !!conflitoSobreposicao);
 
   const executarSalvamento = async () => {
     setSubmitting(true);
@@ -235,6 +144,10 @@ export function AgendamentoWizard({
       w.setError('Por favor, verifique os campos obrigatórios e horários.');
       return;
     }
+    if (conflitoSobreposicao) {
+      w.setError('A cliente já possui um agendamento neste horário. Por favor, edite o atendimento existente.');
+      return;
+    }
     await executarSalvamento();
   };
 
@@ -256,9 +169,20 @@ export function AgendamentoWizard({
           totalMinutos={t.totalMinutos} valorTotal={t.valorTotal} hojeStr={hojeStr} dataStr={w.dataStr} setDataStr={w.setDataStr} horaInicioStr={w.horaInicioStr}
           setHoraInicioStr={w.setHoraInicioStr} horaFimStr={t.horaFimStr} isHorarioPassado={t.isHorarioPassado} status={w.status} setStatus={w.setStatus}
           observacoes={w.observacoes} setObservacoes={w.setObservacoes} onGoToStep={setCurrentStep} conflitos={conflitos} loadingConflitos={loadingConflitos}
+          conflitoClienteSobreposicao={conflitoSobreposicao} conflitoClienteMesmoDia={conflitoMesmoDia} onEditarAgendamento={(ag) => setAgendamentoParaEditar(ag)}
         />
         <WizardNavigation currentStep={currentStep} canAdvance={t.canAdvance} submitting={submitting} mode={mode} onPrev={() => setCurrentStep((p) => p - 1)} onNext={() => setCurrentStep((p) => p + 1)} onSubmit={handleSubmit} onCancel={() => { setCurrentStep(1); onCancel?.(); }} />
       </div>
+
+      <AgendamentoInlineEditDialog
+        agendamento={agendamentoParaEditar}
+        open={!!agendamentoParaEditar}
+        onOpenChange={(open) => !open && setAgendamentoParaEditar(null)}
+        onSuccess={(ag) => {
+          setAgendamentoParaEditar(null);
+          onSuccess(ag);
+        }}
+      />
     </div>
   );
 }

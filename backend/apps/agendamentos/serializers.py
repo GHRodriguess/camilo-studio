@@ -42,11 +42,49 @@ class AgendamentoSerializer(serializers.ModelSerializer):
             'atualizado_em',
         ]
 
+    def _validar_horarios_passados(self, inicio):
+        agora_tolerancia = timezone.now() - datetime.timedelta(minutes=5)
+        if not self.instance:
+            if inicio and inicio < agora_tolerancia:
+                raise serializers.ValidationError({
+                    'data_hora_inicio': 'Não é permitido criar um agendamento anterior ao horário atual.'
+                })
+        else:
+            if 'data_hora_inicio' in self.initial_data and inicio < agora_tolerancia:
+                raise serializers.ValidationError({
+                    'data_hora_inicio': 'Não é permitido reagendar para um horário anterior ao momento atual.'
+                })
+
+    def _validar_conflito_cliente(self, cliente, inicio, fim):
+        if not cliente or not inicio or not fim:
+            return
+
+        qs = Agendamento.objects.filter(
+            cliente=cliente,
+            status__in=['agendado', 'confirmado', 'em_atendimento'],
+            data_hora_inicio__lt=fim,
+            data_hora_fim__gt=inicio,
+        )
+        if self.instance:
+            qs = qs.exclude(id=self.instance.id)
+
+        conflito = qs.select_related('cliente').first()
+        if conflito:
+            raise serializers.ValidationError({
+                'conflito_cliente': 'A cliente já possui um atendimento agendado neste horário.',
+                'agendamento_id': conflito.id,
+                'horario_inicio': conflito.data_hora_inicio.isoformat(),
+                'horario_fim': conflito.data_hora_fim.isoformat(),
+            })
+
     def validate(self, attrs):
         inicio = attrs.get('data_hora_inicio')
         fim = attrs.get('data_hora_fim')
+        cliente = attrs.get('cliente')
 
         if self.instance:
+            if not cliente:
+                cliente = self.instance.cliente
             if inicio and not fim:
                 duracao = self.instance.data_hora_fim - self.instance.data_hora_inicio
                 fim = inicio + duracao
@@ -61,20 +99,8 @@ class AgendamentoSerializer(serializers.ModelSerializer):
                 'data_hora_fim': 'O horário de término deve ser posterior ao horário de início.'
             })
 
-        agora_tolerancia = timezone.now() - datetime.timedelta(minutes=5)
-
-        # Regra inviolável: não agendar no passado
-        if not self.instance:
-            if inicio and inicio < agora_tolerancia:
-                raise serializers.ValidationError({
-                    'data_hora_inicio': 'Não é permitido criar um agendamento anterior ao horário atual.'
-                })
-        else:
-            # Se for edição e estiver mudando o horário de início
-            if 'data_hora_inicio' in attrs and inicio < agora_tolerancia:
-                raise serializers.ValidationError({
-                    'data_hora_inicio': 'Não é permitido reagendar para um horário anterior ao momento atual.'
-                })
+        self._validar_horarios_passados(inicio)
+        self._validar_conflito_cliente(cliente, inicio, fim)
 
         return attrs
 
