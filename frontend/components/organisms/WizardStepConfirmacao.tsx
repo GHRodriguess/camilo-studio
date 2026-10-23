@@ -82,7 +82,7 @@ export function WizardStepConfirmacao(props: StepConfirmacaoProps) {
       <div>
         <span className="text-[11px] uppercase tracking-[0.2em] font-semibold text-primary">Passo 4 de 4</span>
         <h3 className="text-lg sm:text-2xl font-bold text-on-surface font-heading tracking-tight mt-0.5">Revisão do Atendimento</h3>
-        <p className="text-xs text-on-surface-variant mt-0.5">Confira os detalhes antes de confirmar o agendamento no Camilo Studio.</p>
+        <p className="text-xs text-on-surface-variant mt-0.5">Confira os detalhes antes de confirmar o agendamento no Studio Marilia Camilo.</p>
       </div>
 
       {props.conflitos && props.conflitos.length > 0 && (

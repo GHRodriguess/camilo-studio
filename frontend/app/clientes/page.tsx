@@ -299,7 +299,7 @@ export default function ClientesPage() {
       {loading ? (
         <LoadingState message="Carregando clientes cadastradas..." />
       ) : clientes.length === 0 ? (
-        <EmptyState icon={Users} title="Nenhuma cliente cadastrada" description="Inicie a base de clientes do Camilo Studio registrando a primeira cliente." actionLabel="Cadastrar Nova Cliente" onAction={() => router.push('/clientes/novo')} />
+        <EmptyState icon={Users} title="Nenhuma cliente cadastrada" description="Inicie a base de clientes do Studio Marilia Camilo registrando a primeira cliente." actionLabel="Cadastrar Nova Cliente" onAction={() => router.push('/clientes/novo')} />
       ) : clientesFiltrados.length === 0 ? (
         <NoSearchResultsState searchTerm={search} onClear={() => setSearch('')} />
       ) : (

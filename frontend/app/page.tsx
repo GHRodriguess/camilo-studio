@@ -28,7 +28,7 @@ export default function HomePage() {
       <div className="flex flex-col items-center gap-3">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
         <p className="text-xs uppercase tracking-widest text-on-surface-variant font-medium">
-          Camilo Studio
+          Studio Marilia Camilo
         </p>
       </div>
     </div>

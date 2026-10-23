@@ -76,7 +76,7 @@ export function ModalNovoProfissional({
           </div>
           <div className="space-y-1.5">
             <Label className="text-xs font-medium text-on-surface-variant">E-mail Profissional (Opcional)</Label>
-            <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Ex: gabriela@camilostudio.com" className="rounded-full h-11 text-xs" />
+            <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Ex: gabriela@studiomariliacamilo.com" className="rounded-full h-11 text-xs" />
             <p className="text-[10px] text-on-surface-variant">Se informado, o sistema já gera o acesso com senha provisória enviada por e-mail.</p>
           </div>
           <div className="pt-3 flex justify-end gap-2">

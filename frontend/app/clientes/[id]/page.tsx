@@ -295,7 +295,7 @@ export default function ClienteDetalhesPage({ params }: { params: Promise<{ id: 
         formulas={formulas}
         copiadoId={copiadoId}
         onCopiar={(f) => {
-          navigator.clipboard.writeText(`[Fórmula Camilo Studio] Procedimento: ${f.procedimento}\nMistura: ${f.formula_texto}\nOX: ${f.volumagem_ox} | Pausa: ${f.tempo_pausa_minutos} min`);
+          navigator.clipboard.writeText(`[Fórmula Studio Marilia Camilo] Procedimento: ${f.procedimento}\nMistura: ${f.formula_texto}\nOX: ${f.volumagem_ox} | Pausa: ${f.tempo_pausa_minutos} min`);
           setCopiadoId(f.id);
           setTimeout(() => setCopiadoId(null), 3000);
         }}

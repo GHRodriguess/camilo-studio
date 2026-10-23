@@ -106,7 +106,7 @@ function TopHeader({ mounted, user, logout }: { mounted: boolean; user: User | n
 
       <div className="hidden md:flex items-center gap-2">
         <span className="text-xs tracking-wider uppercase text-on-surface-variant font-medium">
-          Camilo Studio Ateliê
+          Studio Marilia Camilo Ateliê
         </span>
       </div>
 

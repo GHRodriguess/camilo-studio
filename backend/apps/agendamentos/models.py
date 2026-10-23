@@ -41,7 +41,7 @@ class Agendamento(models.Model):
         ordering = ['data_hora_inicio']
 
     def __str__(self):
-        prof_nome = self.profissional.nome if self.profissional else 'Equipe Camilo Studio'
+        prof_nome = self.profissional.nome if self.profissional else 'Equipe Studio Marilia Camilo'
         return f"{self.cliente.nome} com {prof_nome} ({self.data_hora_inicio.strftime('%d/%m/%Y %H:%M')})"
 
     @property

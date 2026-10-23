@@ -1,5 +1,5 @@
 """
-Testes estruturais e de integridade de código do Backend — Camilo Studio.
+Testes estruturais e de integridade de código do Backend — Studio Marilia Camilo.
 
 Garante:
 1. Limite máximo de linhas por arquivo Python (300 linhas).

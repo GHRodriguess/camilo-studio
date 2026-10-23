@@ -15,12 +15,12 @@ class AgendamentoConflitoClienteTests(TestCase):
     def setUp(self):
         self.client = APIClient()
         self.user = Usuario.objects.create_user(
-            email='recepcao@camilostudio.com',
+            email='recepcao@studiomariliacamilo.com',
             password='senha123',
             nome='Recepção',
             perfil='atendente',
         )
-        login = self.client.post('/api/auth/login/', {'email': 'recepcao@camilostudio.com', 'password': 'senha123'})
+        login = self.client.post('/api/auth/login/', {'email': 'recepcao@studiomariliacamilo.com', 'password': 'senha123'})
         self.client.credentials(HTTP_AUTHORIZATION=f"Token {login.data['token']}")
 
         self.cliente = Cliente.objects.create(

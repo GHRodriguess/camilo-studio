@@ -1,4 +1,4 @@
-"""Templates HTML editoriais no estilo Violet Luminary para e-mails do Camilo Studio."""
+"""Templates HTML editoriais no estilo Violet Luminary para e-mails do Studio Marilia Camilo."""
 
 
 def base_email_html(titulo_cabecalho: str, conteudo_html: str) -> str:
@@ -23,7 +23,7 @@ def base_email_html(titulo_cabecalho: str, conteudo_html: str) -> str:
               <table role="presentation" cellspacing="0" cellpadding="0" border="0">
                 <tr>
                   <td align="center">
-                    <div style="font-size: 21px; font-weight: 800; letter-spacing: 3.5px; color: #1E1233; text-transform: uppercase;">CAMILO STUDIO</div>
+                    <div style="font-size: 21px; font-weight: 800; letter-spacing: 3.5px; color: #1E1233; text-transform: uppercase;">STUDIO MARILIA CAMILO</div>
                     <div style="font-size: 10px; font-weight: 600; letter-spacing: 2px; color: #7C3AED; text-transform: uppercase; margin-top: 4px;">Haute Coiffure &amp; Estética Avançada</div>
                   </td>
                 </tr>
@@ -36,7 +36,7 @@ def base_email_html(titulo_cabecalho: str, conteudo_html: str) -> str:
           <tr>
             <td style="background-color: #FAF7FD; padding: 24px 32px; border-top: 1px solid #F1E9F8; text-align: center;">
               <p style="margin: 0; font-size: 11px; color: #857B94; line-height: 1.6;">
-                <strong>Camilo Studio</strong> &bull; Sistema de Gestão &amp; Atendimento<br>
+                <strong>Studio Marilia Camilo</strong> &bull; Sistema de Gestão &amp; Atendimento<br>
                 Rua Oscar Freire, 1200 - Jardins, São Paulo - SP
               </p>
               <p style="margin: 8px 0 0 0; font-size: 10px; color: #ACA3BA;">Este é um e-mail automático e confidencial do ateliê.</p>
@@ -55,7 +55,7 @@ def template_codigo_recuperacao(nome: str, codigo: str, link_recuperacao: str) -
     return f"""
       <h2 style="margin: 0 0 12px 0; font-size: 18px; font-weight: 700; color: #1E1233;">Olá, {nome}!</h2>
       <p style="margin: 0 0 24px 0; font-size: 13.5px; line-height: 1.6; color: #524763;">
-        Recebemos uma solicitação para redefinir a senha de acesso da sua conta no <strong>Camilo Studio</strong>. Utilize o código de uso único abaixo para prosseguir:
+        Recebemos uma solicitação para redefinir a senha de acesso da sua conta no <strong>Studio Marilia Camilo</strong>. Utilize o código de uso único abaixo para prosseguir:
       </p>
       <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #F6F0FD; border: 1px solid #DCC9F7; border-radius: 18px; margin-bottom: 24px;">
         <tr>
@@ -82,7 +82,7 @@ def template_novo_acesso_equipe(nome: str, email_destino: str, senha_temp: str, 
     return f"""
       <h2 style="margin: 0 0 12px 0; font-size: 18px; font-weight: 700; color: #1E1233;">Olá, {nome}!</h2>
       <p style="margin: 0 0 20px 0; font-size: 13.5px; line-height: 1.6; color: #524763;">
-        Seu acesso à plataforma de gestão do <strong>Camilo Studio</strong> foi configurado com sucesso.
+        Seu acesso à plataforma de gestão do <strong>Studio Marilia Camilo</strong> foi configurado com sucesso.
       </p>
       <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #F6F0FD; border: 1px solid #DCC9F7; border-radius: 18px; margin-bottom: 24px;">
         <tr>
@@ -106,7 +106,7 @@ def template_novo_acesso_equipe(nome: str, email_destino: str, senha_temp: str, 
       </table>
       <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-bottom: 24px;">
         <tr>
-          <td align="center"><a href="{link_login}" target="_blank" style="display: inline-block; background-color: #7C3AED; color: #FFFFFF; font-size: 13.5px; font-weight: 600; text-decoration: none; padding: 14px 34px; border-radius: 9999px; box-shadow: 0 4px 14px rgba(124, 58, 237, 0.28);">Acessar o Camilo Studio &rarr;</a></td>
+          <td align="center"><a href="{link_login}" target="_blank" style="display: inline-block; background-color: #7C3AED; color: #FFFFFF; font-size: 13.5px; font-weight: 600; text-decoration: none; padding: 14px 34px; border-radius: 9999px; box-shadow: 0 4px 14px rgba(124, 58, 237, 0.28);">Acessar o Studio Marilia Camilo &rarr;</a></td>
         </tr>
       </table>
       <p style="margin: 0; font-size: 11.5px; line-height: 1.5; color: #857B94; text-align: center;">Dúvidas ou suporte? Entre em contato com a recepção do ateliê.</p>
@@ -118,7 +118,7 @@ def template_reset_senha_admin(nome: str, email_destino: str, nova_senha_temp: s
     return f"""
       <h2 style="margin: 0 0 12px 0; font-size: 18px; font-weight: 700; color: #1E1233;">Olá, {nome}!</h2>
       <p style="margin: 0 0 20px 0; font-size: 13.5px; line-height: 1.6; color: #524763;">
-        O administrador do <strong>Camilo Studio</strong> gerou uma nova credencial provisória para o seu acesso ao sistema.
+        O administrador do <strong>Studio Marilia Camilo</strong> gerou uma nova credencial provisória para o seu acesso ao sistema.
       </p>
       <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #F6F0FD; border: 1px solid #DCC9F7; border-radius: 18px; margin-bottom: 24px;">
         <tr>

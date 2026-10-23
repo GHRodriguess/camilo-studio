@@ -1,5 +1,5 @@
 /**
- * Utilitários de máscara e validação para dados cadastrais do Camilo Studio.
+ * Utilitários de máscara e validação para dados cadastrais do Studio Marilia Camilo.
  */
 
 /**

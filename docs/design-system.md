@@ -6,7 +6,7 @@ Este documento formaliza as especificações de design extraídas do projeto no 
 
 ## 1. Filosofia Estética
 
-O **Camilo Studio** adota o tema **Violet Luminary**, combinando sofisticação editorial contemporânea com a vibração estética de pigmentos cosméticos de alta precisão.
+O **Studio Marilia Camilo** adota o tema **Violet Luminary**, combinando sofisticação editorial contemporânea com a vibração estética de pigmentos cosméticos de alta precisão.
 - **Sofisticação Editorial Violeta:** Hierarquia inspirada em publicações de moda de alta-costura (*haute-couture*), com amplas margens, respiração visual e luminosidade lilás acetinada.
 - **Radiância Luminosa:** Acentos em violeta elétrico (*Electric Violet*) e ametista profundo (*Royal Amethyst*), pareados com fundos claros de brilho sutil e neutros tinta grafite-ametista.
 - **Precisão Confortável:** Tipografia ultra-limpa e disciplinada combinando **Inter** (para títulos editoriais, métricas e corpo de leitura) com **Geist** (para etiquetas, números técnicos de fórmulas, timestamps e micro-controles).

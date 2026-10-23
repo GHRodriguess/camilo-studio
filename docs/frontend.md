@@ -1,4 +1,4 @@
-# Diretrizes de Frontend — Camilo Studio
+# Diretrizes de Frontend — Studio Marilia Camilo
 
 Este documento detalha a arquitetura, convenções e regras de validação do código em `frontend/` (Next.js 16, App Router, TypeScript e Tailwind CSS).
 

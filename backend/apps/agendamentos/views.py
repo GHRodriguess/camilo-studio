@@ -71,8 +71,8 @@ class AgendamentoViewSet(viewsets.ModelViewSet):
     def _montar_dados_whatsapp(self, agendamento, config):
         cliente_nome = agendamento.cliente.nome
         data_local = timezone.localtime(agendamento.data_hora_inicio)
-        profissional_nome = agendamento.profissional.nome if agendamento.profissional else "Equipe Camilo Studio"
-        servicos_nomes = ", ".join(s.nome for s in agendamento.servicos.all()) or "Serviços Camilo Studio"
+        profissional_nome = agendamento.profissional.nome if agendamento.profissional else "Equipe Studio Marilia Camilo"
+        servicos_nomes = ", ".join(s.nome for s in agendamento.servicos.all()) or "Serviços Studio Marilia Camilo"
         valor_str = f"{agendamento.valor_total:.2f}".replace('.', ',')
 
         mensagem = config.template_confirmacao.format(

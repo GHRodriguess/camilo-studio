@@ -8,9 +8,9 @@ interface LogoProps {
 
 export function Logo({ className = '', size = 'md', variant = 'full' }: LogoProps) {
   const iconSizes = {
-    sm: 'w-7 h-7 text-xs',
-    md: 'w-9 h-9 text-sm',
-    lg: 'w-14 h-14 text-xl',
+    sm: 'w-7 h-7 text-[10px] tracking-tight',
+    md: 'w-9 h-9 text-xs tracking-tight',
+    lg: 'w-14 h-14 text-base tracking-normal',
   };
 
   const textSizes = {
@@ -23,18 +23,18 @@ export function Logo({ className = '', size = 'md', variant = 'full' }: LogoProp
     <div className={`flex items-center gap-2.5 ${className}`}>
       {/* Monogram Crest */}
       <div
-        className={`${iconSizes[size]} rounded-2xl bg-gradient-to-br from-primary to-secondary text-primary-foreground flex items-center justify-center font-bold tracking-widest shadow-md shadow-primary/20 shrink-0 select-none`}
+        className={`${iconSizes[size]} rounded-2xl bg-gradient-to-br from-primary to-secondary text-primary-foreground flex items-center justify-center font-bold shadow-md shadow-primary/20 shrink-0 select-none`}
       >
-        <span>CS</span>
+        <span>SMC</span>
       </div>
 
       {variant === 'full' && (
         <div className="flex flex-col leading-none">
-          <span className={`font-semibold tracking-wider uppercase font-heading ${textSizes[size]} text-on-surface`}>
-            Camilo
-          </span>
-          <span className="text-[10px] tracking-[0.2em] font-medium text-primary uppercase">
+          <span className="text-[9px] tracking-[0.25em] font-semibold text-primary uppercase">
             Studio
+          </span>
+          <span className={`font-semibold tracking-wider uppercase font-heading ${textSizes[size]} text-on-surface`}>
+            Marilia Camilo
           </span>
         </div>
       )}

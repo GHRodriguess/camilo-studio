@@ -1,6 +1,6 @@
-# Diretrizes de Backend — Camilo Studio
+# Diretrizes de Backend — Studio Marilia Camilo
 
-Este documento estabelece as diretrizes de desenvolvimento, arquitetura e convenções da API do **Camilo Studio** em `backend/`.
+Este documento estabelece as diretrizes de desenvolvimento, arquitetura e convenções da API do **Studio Marilia Camilo** em `backend/`.
 
 ---
 

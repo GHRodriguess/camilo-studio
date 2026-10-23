@@ -23,7 +23,7 @@ export function AgendamentoConflitoCard({ agendamento }: AgendamentoConflitoCard
   const horaInicio = formatarHora(agendamento.data_hora_inicio);
   const horaFim = formatarHora(agendamento.data_hora_fim);
   const clienteNome = agendamento.cliente_detalhes?.nome || 'Cliente';
-  const profNome = agendamento.profissional_detalhes?.nome || 'Equipe Camilo Studio';
+  const profNome = agendamento.profissional_detalhes?.nome || 'Equipe Studio Marilia Camilo';
   const servicosNomes = agendamento.servicos_detalhes && agendamento.servicos_detalhes.length > 0
     ? agendamento.servicos_detalhes.map((s) => s.nome).join(', ')
     : 'Serviços não especificados';

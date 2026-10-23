@@ -84,7 +84,7 @@ function ReciboEditorialCard({ agendamento, config, codigo, dataInicio, dataFim 
         </div>
         <div className="space-y-1 text-right">
           <span className="text-[10px] uppercase tracking-wider text-on-surface-variant font-semibold">Atendimento</span>
-          <p className="font-bold text-on-surface text-sm">{agendamento.profissional_detalhes?.nome || 'Equipe Camilo Studio'}</p>
+          <p className="font-bold text-on-surface text-sm">{agendamento.profissional_detalhes?.nome || 'Equipe Studio Marilia Camilo'}</p>
           <p className="text-on-surface-variant text-[11px]">{agendamento.profissional_detalhes?.cargo || 'Ateliê Principal'}</p>
         </div>
       </div>
@@ -188,7 +188,7 @@ export default function ComprovanteAgendamentoPage({
 
   const handleShare = () => {
     const servicos = agendamento.servicos_detalhes?.map((s) => s.nome).join(', ') || 'Procedimentos';
-    const texto = `*Comprovante de Agendamento — Camilo Studio* ✨\n\nCódigo: *${codigo}*\nCliente: *${agendamento.cliente_detalhes?.nome}*\nData: *${dataInicio.toLocaleDateString('pt-BR')}*\nHorário: *${dataInicio.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} às ${dataFim.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}*\nProfissional: *${agendamento.profissional_detalhes?.nome}*\nServiços: ${servicos}\nTotal: *R$ ${Number(agendamento.valor_total).toFixed(2).replace('.', ',')}*\n\nLocal: ${config?.endereco || 'Camilo Studio'}\n\nAguardamos você com muito carinho! 💜`;
+    const texto = `*Comprovante de Agendamento — Studio Marilia Camilo* ✨\n\nCódigo: *${codigo}*\nCliente: *${agendamento.cliente_detalhes?.nome}*\nData: *${dataInicio.toLocaleDateString('pt-BR')}*\nHorário: *${dataInicio.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} às ${dataFim.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}*\nProfissional: *${agendamento.profissional_detalhes?.nome}*\nServiços: ${servicos}\nTotal: *R$ ${Number(agendamento.valor_total).toFixed(2).replace('.', ',')}*\n\nLocal: ${config?.endereco || 'Studio Marilia Camilo'}\n\nAguardamos você com muito carinho! 💜`;
     window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank');
   };
 

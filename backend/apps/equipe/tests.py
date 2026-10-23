@@ -14,7 +14,7 @@ class EquipeTests(TestCase):
     def setUp(self):
         self.client = APIClient()
         self.admin = Usuario.objects.create_superuser(
-            email='admin@camilostudio.com',
+            email='admin@studiomariliacamilo.com',
             password='adminpassword123',
             nome='Admin Master'
         )
@@ -29,7 +29,7 @@ class EquipeTests(TestCase):
 
     def test_criar_acesso_sem_expor_senha_na_resposta(self):
         res = self.client.post(f'/api/profissionais/{self.prof.id}/criar-acesso/', {
-            'email': 'mariana@camilostudio.com',
+            'email': 'mariana@studiomariliacamilo.com',
             'perfil': 'profissional'
         })
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
@@ -38,13 +38,13 @@ class EquipeTests(TestCase):
 
         self.prof.refresh_from_db()
         self.assertIsNotNone(self.prof.usuario)
-        self.assertEqual(self.prof.usuario.email, 'mariana@camilostudio.com')
+        self.assertEqual(self.prof.usuario.email, 'mariana@studiomariliacamilo.com')
         self.assertTrue(self.prof.usuario.deve_redefinir_senha)
 
     def test_resetar_senha(self):
         # Primeiro cria acesso
         self.client.post(f'/api/profissionais/{self.prof.id}/criar-acesso/', {
-            'email': 'mariana@camilostudio.com',
+            'email': 'mariana@studiomariliacamilo.com',
             'perfil': 'profissional'
         })
         self.prof.refresh_from_db()
@@ -63,7 +63,7 @@ class EquipeTests(TestCase):
     def test_toggle_ativo(self):
         # Cria acesso
         self.client.post(f'/api/profissionais/{self.prof.id}/criar-acesso/', {
-            'email': 'mariana@camilostudio.com',
+            'email': 'mariana@studiomariliacamilo.com',
             'perfil': 'profissional'
         })
         self.prof.refresh_from_db()

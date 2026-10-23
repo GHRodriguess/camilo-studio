@@ -11,12 +11,12 @@ class ClienteValidacaoTests(TestCase):
     def setUp(self):
         self.client = APIClient()
         self.user = Usuario.objects.create_user(
-            email='admin@camilostudio.com',
+            email='admin@studiomariliacamilo.com',
             password='admin123',
             nome='Admin',
             perfil='admin',
         )
-        login_res = self.client.post('/api/auth/login/', {'email': 'admin@camilostudio.com', 'password': 'admin123'})
+        login_res = self.client.post('/api/auth/login/', {'email': 'admin@studiomariliacamilo.com', 'password': 'admin123'})
         self.client.credentials(HTTP_AUTHORIZATION=f"Token {login_res.data['token']}")
 
     def test_cadastrar_cliente_telefone_valido(self):

@@ -28,7 +28,7 @@ function NovoClienteHeader() {
           Cadastrar Nova Cliente
         </h1>
         <p className="text-xs text-on-surface-variant mt-1">
-          Cadastre as informações essenciais para contato e agendamento no Camilo Studio.
+          Cadastre as informações essenciais para contato e agendamento no Studio Marilia Camilo.
         </p>
       </div>
     </>

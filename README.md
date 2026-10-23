@@ -1,4 +1,4 @@
-# Camilo Studio
+# Studio Marilia Camilo
 
 > Sistema de gestão integrada para ateliês de beleza e estética de alto padrão, unindo sofisticação visual e controle operacional de agenda, clientes, equipe e fichas técnicas químicas.
 

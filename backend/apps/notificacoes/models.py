@@ -49,20 +49,20 @@ class NotificacaoWhatsApp(models.Model):
 
 
 class ConfiguracaoAtelie(models.Model):
-    nome_atelie = models.CharField('Nome do Ateliê', max_length=255, default='Camilo Studio')
+    nome_atelie = models.CharField('Nome do Ateliê', max_length=255, default='Studio Marilia Camilo')
     slogan = models.CharField('Slogan / Subtítulo', max_length=255, default='Haute Coiffure & Estética Avançada')
     telefone = models.CharField('Telefone Comercial WhatsApp', max_length=30, default='+55 11 98765-4321')
-    email = models.EmailField('E-mail Institucional', default='contato@camilostudio.com')
+    email = models.EmailField('E-mail Institucional', default='contato@studiomariliacamilo.com')
     endereco = models.CharField('Endereço Completo', max_length=255, default='Rua Oscar Freire, 1200 - Jardins, São Paulo - SP')
     horario_funcionamento = models.CharField('Horário de Atendimento', max_length=255, default='Terça a Sábado, das 09h às 20h')
 
     template_confirmacao = models.TextField(
         'Template de Confirmação',
-        default="Olá, {cliente}! ✨\nSeu agendamento no *Camilo Studio* está confirmado para o dia *{data}* às *{horario}* com *{profissional}*.\n\nServiços: {servicos}\nValor estimado: R$ {valor}\n\nLocal: {endereco}\n\nNos vemos em breve para uma experiência incrível! 💜"
+        default="Olá, {cliente}! ✨\nSeu agendamento no *Studio Marilia Camilo* está confirmado para o dia *{data}* às *{horario}* com *{profissional}*.\n\nServiços: {servicos}\nValor estimado: R$ {valor}\n\nLocal: {endereco}\n\nNos vemos em breve para uma experiência incrível! 💜"
     )
     template_lembrete = models.TextField(
         'Template de Lembrete',
-        default="Olá, {cliente}! ✨ Lembramos do seu horário amanhã, dia *{data}* às *{horario}*, no *Camilo Studio*. Por favor, responda com SIM para confirmar sua presença."
+        default="Olá, {cliente}! ✨ Lembramos do seu horário amanhã, dia *{data}* às *{horario}*, no *Studio Marilia Camilo*. Por favor, responda com SIM para confirmar sua presença."
     )
     politica_cancelamento = models.TextField(
         'Política de Cancelamento',

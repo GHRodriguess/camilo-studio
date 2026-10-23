@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Validador de Estrutura de Arquivos e Código — Camilo Studio (Frontend)
+ * Validador de Estrutura de Arquivos e Código — Studio Marilia Camilo (Frontend)
  * 
  * Regras estritas (sem exceções ou baselines legadas):
  * 1. Tamanho máximo de arquivo (linhas de código)
@@ -167,7 +167,7 @@ for (const filePath of files) {
 }
 
 // RELATÓRIO
-console.log('\n🔍 Verificação Estrutural do Frontend (Camilo Studio)');
+console.log('\n🔍 Verificação Estrutural do Frontend (Studio Marilia Camilo)');
 console.log(`📁 Arquivos escaneados: ${files.length}`);
 
 if (errors.length > 0) {

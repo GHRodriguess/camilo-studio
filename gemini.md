@@ -1,6 +1,6 @@
-# Gemini Guidelines — Camilo Studio
+# Gemini Guidelines — Studio Marilia Camilo
 
-Este documento serve como **índice executivo e guia mestre de instruções** para o desenvolvimento e manutenção do projeto **Camilo Studio**, tanto para assistentes de IA (como o Gemini) quanto para desenvolvedores humanos.
+Este documento serve como **índice executivo e guia mestre de instruções** para o desenvolvimento e manutenção do projeto **Studio Marilia Camilo**, tanto para assistentes de IA (como o Gemini) quanto para desenvolvedores humanos.
 
 Para especificações detalhadas, consulte sempre a pasta [`docs/`](docs/) e o [`README.md`](README.md).
 
@@ -8,11 +8,11 @@ Para especificações detalhadas, consulte sempre a pasta [`docs/`](docs/) e o [
 
 ## 1. Visão Geral do Projeto
 
-O **Camilo Studio** é uma plataforma dedicada de gestão para ateliês de beleza e estética de alto padrão, combinando sofisticação editorial com eficiência operacional.
+O **Studio Marilia Camilo** é uma plataforma dedicada de gestão para ateliês de beleza e estética de alto padrão, combinando sofisticação editorial com eficiência operacional.
 
 - **Design de Referência (Stitch):** [Stitch Project 7569087254048681171](https://stitch.withgoogle.com/projects/7569087254048681171)
 - **Tema Visual:** *Violet Luminary* (Inter + Geist, tons de violeta elétrico `#7C3AED` e ametista profundo).
-- **Modelo de Negócio:** Aplicação Single-tenant dedicada à operação do Camilo Studio.
+- **Modelo de Negócio:** Aplicação Single-tenant dedicada à operação do Studio Marilia Camilo.
 
 ---
 

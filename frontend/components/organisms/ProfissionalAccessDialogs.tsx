@@ -59,7 +59,7 @@ interface FormCriarAcessoProps {
 }
 
 function FormCriarAcesso({ prof, onCreated, onClose }: FormCriarAcessoProps) {
-  const [email, setEmail] = useState(`${prof.nome.toLowerCase().replace(/\s+/g, '.')}@camilostudio.com`);
+  const [email, setEmail] = useState(`${prof.nome.toLowerCase().replace(/\s+/g, '.')}@studiomariliacamilo.com`);
   const [perfil, setPerfil] = useState<'admin' | 'profissional'>('profissional');
   const [saving, setSaving] = useState(false);
   const [resultado, setResultado] = useState<{ email: string } | null>(null);

@@ -101,7 +101,7 @@ function FormulaFormFields(props: FieldsProps) {
           <Select value={props.profissional ? String(props.profissional) : 'sem_especifico'} onValueChange={(val) => props.setProfissional(val === 'sem_especifico' ? '' : Number(val))}>
             <SelectTrigger className="rounded-full h-11 text-xs"><SelectValue placeholder="Selecione..." /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="sem_especifico" className="text-xs">Equipe Camilo Studio</SelectItem>
+              <SelectItem value="sem_especifico" className="text-xs">Equipe Studio Marilia Camilo</SelectItem>
               {props.equipe.map((p) => (<SelectItem key={p.id} value={String(p.id)} className="text-xs">{p.nome} ({p.cargo})</SelectItem>))}
             </SelectContent>
           </Select>

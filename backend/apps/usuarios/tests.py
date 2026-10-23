@@ -11,7 +11,7 @@ class AuthTests(TestCase):
     def setUp(self):
         self.client = APIClient()
         self.user = Usuario.objects.create_user(
-            email='test@camilostudio.com',
+            email='test@studiomariliacamilo.com',
             password='secretpassword123',
             nome='Profissional Teste',
             perfil='profissional',
@@ -19,16 +19,16 @@ class AuthTests(TestCase):
 
     def test_login_success(self):
         response = self.client.post('/api/auth/login/', {
-            'email': 'test@camilostudio.com',
+            'email': 'test@studiomariliacamilo.com',
             'password': 'secretpassword123',
         })
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn('token', response.data)
-        self.assertEqual(response.data['user']['email'], 'test@camilostudio.com')
+        self.assertEqual(response.data['user']['email'], 'test@studiomariliacamilo.com')
 
     def test_login_invalid_credentials(self):
         response = self.client.post('/api/auth/login/', {
-            'email': 'test@camilostudio.com',
+            'email': 'test@studiomariliacamilo.com',
             'password': 'wrongpassword',
         })
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -39,7 +39,7 @@ class AuthTests(TestCase):
 
         # Login para obter token
         login_res = self.client.post('/api/auth/login/', {
-            'email': 'test@camilostudio.com',
+            'email': 'test@studiomariliacamilo.com',
             'password': 'secretpassword123',
         })
         token = login_res.data['token']
@@ -60,14 +60,14 @@ class AuthTests(TestCase):
         from apps.usuarios.models import CodigoRedefinicaoSenha
 
         # 1. Solicita recuperação de senha
-        res = self.client.post('/api/auth/esqueci-senha/', {'email': 'test@camilostudio.com'})
+        res = self.client.post('/api/auth/esqueci-senha/', {'email': 'test@studiomariliacamilo.com'})
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         # Garante que não vaza token nem código no payload da resposta
         self.assertNotIn('dev_token', res.data)
         self.assertNotIn('codigo', res.data)
 
         # 2. Verifica se o código foi registrado no banco
-        codigo_obj = CodigoRedefinicaoSenha.objects.filter(email='test@camilostudio.com', utilizado=False).first()
+        codigo_obj = CodigoRedefinicaoSenha.objects.filter(email='test@studiomariliacamilo.com', utilizado=False).first()
         self.assertIsNotNone(codigo_obj)
         self.assertEqual(len(codigo_obj.codigo), 6)
         self.assertTrue(codigo_obj.codigo.isdigit())
@@ -75,7 +75,7 @@ class AuthTests(TestCase):
 
         # 3. Confirma redefinição com código correto
         res_confirm = self.client.post('/api/auth/confirmar-redefinicao/', {
-            'email': 'test@camilostudio.com',
+            'email': 'test@studiomariliacamilo.com',
             'codigo': codigo_obj.codigo,
             'nova_senha': 'senhaNova123!',
             'confirmacao_senha': 'senhaNova123!',
@@ -94,7 +94,7 @@ class AuthTests(TestCase):
         from apps.usuarios.models import CodigoRedefinicaoSenha
 
         codigo_obj = CodigoRedefinicaoSenha.objects.create(
-            email='test@camilostudio.com',
+            email='test@studiomariliacamilo.com',
             codigo='654321',
         )
         # Simula criação há 16 minutos atrás
@@ -105,7 +105,7 @@ class AuthTests(TestCase):
         self.assertFalse(codigo_obj.is_valido())
 
         res = self.client.post('/api/auth/confirmar-redefinicao/', {
-            'email': 'test@camilostudio.com',
+            'email': 'test@studiomariliacamilo.com',
             'codigo': '654321',
             'nova_senha': 'senhaNova123!',
             'confirmacao_senha': 'senhaNova123!',

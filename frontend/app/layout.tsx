@@ -24,8 +24,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Camilo Studio — Haute Coiffure & Estética Avançada",
-  description: "Plataforma de gestão dedicada ao Camilo Studio.",
+  title: "Studio Marilia Camilo — Haute Coiffure & Estética Avançada",
+  description: "Plataforma de gestão dedicada ao Studio Marilia Camilo.",
 };
 
 export default function RootLayout({

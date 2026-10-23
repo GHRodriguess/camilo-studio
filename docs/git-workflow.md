@@ -1,6 +1,6 @@
-# Fluxo Git & Padrões de Commit — Camilo Studio
+# Fluxo Git & Padrões de Commit — Studio Marilia Camilo
 
-Este documento padroniza as convenções de commits, branches e merge requests adotadas no projeto **Camilo Studio**.
+Este documento padroniza as convenções de commits, branches e merge requests adotadas no projeto **Studio Marilia Camilo**.
 
 ---
 

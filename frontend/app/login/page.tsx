@@ -55,7 +55,7 @@ function LoginForm({
             autoComplete="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="seu.email@camilostudio.com"
+            placeholder="seu.email@studiomariliacamilo.com"
             className="pl-10 h-12 rounded-full border-outline-variant bg-surface-container-lowest focus-visible:ring-primary text-sm shadow-sm"
           />
         </div>

@@ -43,7 +43,7 @@ function AgendaWhatsappDialog({
             <MessageSquare className="w-5 h-5" /> Enviar Confirmação WhatsApp
           </DialogTitle>
           <DialogDescription className="text-xs text-on-surface-variant">
-            O Camilo Studio preparou uma mensagem elegante para a cliente.
+            O Studio Marilia Camilo preparou uma mensagem elegante para a cliente.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 pt-2">

@@ -1,13 +1,13 @@
-# Módulos e Regras de Negócio — Camilo Studio
+# Módulos e Regras de Negócio — Studio Marilia Camilo
 
-Este documento descreve os fluxos funcionais, telas e regras de negócio do sistema **Camilo Studio**, fundamentados no protótipo de alta fidelidade desenvolvido no [Stitch 7569087254048681171](https://stitch.withgoogle.com/projects/7569087254048681171).
+Este documento descreve os fluxos funcionais, telas e regras de negócio do sistema **Studio Marilia Camilo**, fundamentados no protótipo de alta fidelidade desenvolvido no [Stitch 7569087254048681171](https://stitch.withgoogle.com/projects/7569087254048681171).
 
 ---
 
 ## 1. Mapa de Telas e Módulos
 
 ```text
-Camilo Studio
+Studio Marilia Camilo
 ├── Autenticação (Login Mobile)
 ├── Agenda & Atendimentos
 │   ├── Visão da Agenda Diária / Semanal
@@ -76,4 +76,4 @@ Camilo Studio
   - Visualização de ocupação por cadeira/bancada.
 
 ### 2.5. Ajustes e Configurações
-- **Objetivo:** Definir horários de funcionamento do espaço, templates de mensagem do WhatsApp e dados institucionais do Camilo Studio.
+- **Objetivo:** Definir horários de funcionamento do espaço, templates de mensagem do WhatsApp e dados institucionais do Studio Marilia Camilo.
