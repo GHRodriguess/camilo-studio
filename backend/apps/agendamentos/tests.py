@@ -56,6 +56,8 @@ class AgendamentoTests(TestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertIn('link_whatsapp', res.data)
         self.assertIn('wa.me', res.data['link_whatsapp'])
+        hora_local_esperada = timezone.localtime(ag.data_hora_inicio).strftime('%H:%M')
+        self.assertIn(hora_local_esperada, res.data['mensagem'])
 
         # Confirmar WhatsApp
         conf_res = self.client.post(f'/api/agendamentos/{ag.id}/confirmar-whatsapp/')
@@ -63,3 +65,190 @@ class AgendamentoTests(TestCase):
 
         ag.refresh_from_db()
         self.assertEqual(ag.status, 'confirmado')
+
+    def test_editar_agendamento(self):
+        ag = Agendamento.objects.create(
+            cliente=self.cliente,
+            profissional=self.prof,
+            data_hora_inicio=timezone.now(),
+            data_hora_fim=timezone.now() + timedelta(hours=1),
+            valor_total=280.00,
+            status='agendado'
+        )
+        ag.servicos.add(self.servico)
+
+        novo_horario = timezone.now() + timedelta(days=1)
+        res = self.client.patch(f'/api/agendamentos/{ag.id}/', {
+            'observacoes': 'Cliente prefere cafe sem acucar',
+            'status': 'em_atendimento',
+            'data_hora_inicio': novo_horario.isoformat(),
+        }, format='json')
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        ag.refresh_from_db()
+        self.assertEqual(ag.observacoes, 'Cliente prefere cafe sem acucar')
+        self.assertEqual(ag.status, 'em_atendimento')
+
+    def test_excluir_agendamento(self):
+        ag = Agendamento.objects.create(
+            cliente=self.cliente,
+            profissional=self.prof,
+            data_hora_inicio=timezone.now(),
+            data_hora_fim=timezone.now() + timedelta(hours=1),
+            valor_total=280.00,
+            status='agendado'
+        )
+        res = self.client.delete(f'/api/agendamentos/{ag.id}/')
+        self.assertEqual(res.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(Agendamento.objects.filter(id=ag.id).exists())
+
+    def test_bloqueio_agendamento_no_passado(self):
+        horario_passado = timezone.now() - timedelta(hours=2)
+        res = self.client.post('/api/agendamentos/', {
+            'cliente': self.cliente.id,
+            'servicos': [self.servico.id],
+            'data_hora_inicio': horario_passado.isoformat(),
+            'data_hora_fim': (horario_passado + timedelta(hours=1)).isoformat(),
+        }, format='json')
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('data_hora_inicio', res.data)
+
+    def test_criacao_agendamento_futuro_sucesso(self):
+        horario_futuro = timezone.now() + timedelta(hours=3)
+        res = self.client.post('/api/agendamentos/', {
+            'cliente': self.cliente.id,
+            'servicos': [self.servico.id],
+            'data_hora_inicio': horario_futuro.isoformat(),
+            'data_hora_fim': (horario_futuro + timedelta(hours=1)).isoformat(),
+        }, format='json')
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(res.data['indicador_temporal'], 'futuro')
+
+    def test_transicoes_status_inteligentes(self):
+        ag = Agendamento.objects.create(
+            cliente=self.cliente,
+            profissional=self.prof,
+            data_hora_inicio=timezone.now() + timedelta(hours=1),
+            data_hora_fim=timezone.now() + timedelta(hours=2),
+            status='agendado'
+        )
+
+        # Iniciar
+        res = self.client.post(f'/api/agendamentos/{ag.id}/iniciar/')
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        ag.refresh_from_db()
+        self.assertEqual(ag.status, 'em_atendimento')
+
+        # Concluir
+        res = self.client.post(f'/api/agendamentos/{ag.id}/concluir/')
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        ag.refresh_from_db()
+        self.assertEqual(ag.status, 'concluido')
+
+        # Não compareceu em novo agendamento
+        ag2 = Agendamento.objects.create(
+            cliente=self.cliente,
+            profissional=self.prof,
+            data_hora_inicio=timezone.now() + timedelta(hours=1),
+            data_hora_fim=timezone.now() + timedelta(hours=2),
+            status='agendado'
+        )
+        res = self.client.post(f'/api/agendamentos/{ag2.id}/nao-compareceu/')
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        ag2.refresh_from_db()
+        self.assertEqual(ag2.status, 'nao_compareceu')
+
+    def test_consulta_conflitos_e_criacao_nao_restritiva(self):
+        base = timezone.now() + timedelta(days=2)
+        ag1 = Agendamento.objects.create(
+            cliente=self.cliente,
+            profissional=self.prof,
+            data_hora_inicio=base.replace(hour=14, minute=0, second=0, microsecond=0),
+            data_hora_fim=base.replace(hour=16, minute=0, second=0, microsecond=0),
+            status='confirmado'
+        )
+        ag1.servicos.add(self.servico)
+
+        # Agendamento cancelado no mesmo horário (deve ser ignorado)
+        ag_cancelado = Agendamento.objects.create(
+            cliente=self.cliente,
+            data_hora_inicio=base.replace(hour=14, minute=30, second=0, microsecond=0),
+            data_hora_fim=base.replace(hour=15, minute=30, second=0, microsecond=0),
+            status='cancelado'
+        )
+
+        # Consulta intervalo com sobreposição (15:00 às 17:00)
+        inicio_busca = (base.replace(hour=15, minute=0, second=0, microsecond=0)).isoformat()
+        fim_busca = (base.replace(hour=17, minute=0, second=0, microsecond=0)).isoformat()
+        res = self.client.get('/api/agendamentos/conflitos/', {'inicio': inicio_busca, 'fim': fim_busca})
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        ids = [item['id'] for item in res.data]
+        self.assertIn(ag1.id, ids)
+        self.assertNotIn(ag_cancelado.id, ids)
+
+        # Teste com exclude_id
+        res_excl = self.client.get('/api/agendamentos/conflitos/', {
+            'inicio': inicio_busca,
+            'fim': fim_busca,
+            'exclude_id': ag1.id
+        })
+        self.assertEqual(res_excl.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(res_excl.data), 0)
+
+        # Teste de criação concorrente de salão (deve permitir salvar clientes diferentes no mesmo horário)
+        cliente2 = Cliente.objects.create(nome='Marina Ruy Barbosa', telefone='(11) 97777-6666')
+        res_create = self.client.post('/api/agendamentos/', {
+            'cliente': cliente2.id,
+            'servicos': [self.servico.id],
+            'data_hora_inicio': inicio_busca,
+            'data_hora_fim': fim_busca,
+        }, format='json')
+        self.assertEqual(res_create.status_code, status.HTTP_201_CREATED)
+
+    def test_filtros_backend_e_paginacao(self):
+        agora = timezone.now()
+        ag_futuro = Agendamento.objects.create(
+            cliente=self.cliente,
+            profissional=self.prof,
+            data_hora_inicio=agora + timedelta(days=1),
+            data_hora_fim=agora + timedelta(days=1, hours=1),
+            status='agendado'
+        )
+        ag_hoje_concluido = Agendamento.objects.create(
+            cliente=self.cliente,
+            profissional=self.prof,
+            data_hora_inicio=agora.replace(hour=8, minute=0, second=0, microsecond=0),
+            data_hora_fim=agora.replace(hour=9, minute=0, second=0, microsecond=0),
+            status='concluido'
+        )
+        ag_falta = Agendamento.objects.create(
+            cliente=self.cliente,
+            profissional=self.prof,
+            data_hora_inicio=agora - timedelta(days=2),
+            data_hora_fim=agora - timedelta(days=2, hours=-1),
+            status='nao_compareceu'
+        )
+
+        res_prox = self.client.get('/api/agendamentos/?filtro=proximos')
+        self.assertEqual(res_prox.status_code, status.HTTP_200_OK)
+        ids_prox = [item['id'] for item in res_prox.data['results']]
+        self.assertIn(ag_futuro.id, ids_prox)
+        self.assertNotIn(ag_hoje_concluido.id, ids_prox)
+        self.assertNotIn(ag_falta.id, ids_prox)
+
+        res_hoje = self.client.get('/api/agendamentos/?filtro=hoje')
+        self.assertEqual(res_hoje.status_code, status.HTTP_200_OK)
+        ids_hoje = [item['id'] for item in res_hoje.data['results']]
+        self.assertIn(ag_hoje_concluido.id, ids_hoje)
+        self.assertNotIn(ag_futuro.id, ids_hoje)
+
+        res_conc = self.client.get('/api/agendamentos/?filtro=concluido')
+        self.assertEqual(res_conc.status_code, status.HTTP_200_OK)
+        ids_conc = [item['id'] for item in res_conc.data['results']]
+        self.assertIn(ag_hoje_concluido.id, ids_conc)
+        self.assertNotIn(ag_futuro.id, ids_conc)
+
+        self.assertIn('count', res_prox.data)
+        self.assertIn('results', res_prox.data)
+
+

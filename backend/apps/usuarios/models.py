@@ -58,3 +58,23 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return f"{self.nome} ({self.email})"
+
+
+class CodigoRedefinicaoSenha(models.Model):
+    email = models.EmailField('E-mail', max_length=255)
+    codigo = models.CharField('Código Numérico', max_length=6)
+    criado_em = models.DateTimeField('Criado em', auto_now_add=True)
+    utilizado = models.BooleanField('Utilizado', default=False)
+
+    class Meta:
+        verbose_name = 'Código de Redefinição de Senha'
+        verbose_name_plural = 'Códigos de Redefinição de Senha'
+        ordering = ['-criado_em']
+
+    def is_valido(self):
+        from datetime import timedelta
+        from django.utils import timezone
+        return not self.utilizado and (timezone.now() - self.criado_em) <= timedelta(minutes=15)
+
+    def __str__(self):
+        return f"Código {self.codigo} para {self.email} ({'Utilizado' if self.utilizado else 'Pendente'})"

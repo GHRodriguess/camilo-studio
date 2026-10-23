@@ -53,9 +53,15 @@ frontend/components/
 
 ## 3. Tokens e Regras de Lint
 
-### 3.1. Proibição de Cores Hardcoded
+### 3.1. Proibição de Cores Hardcoded e Validação Estrutural
 - Cores, raios de curvatura, sombras e famílias tipográficas só podem ser declarados em `frontend/app/globals.css`.
-- O comando `npm run lint` executa a validação de tokens (`lint:tokens`).
+- O comando `npm run lint` executa o ESLint e automaticamente a validação de estrutura (`npm run test:structure`).
+- **Limites Estruturais Garantidos:**
+  - Máximo de 300 linhas para componentes e libs (400 linhas para páginas).
+  - Máximo de 50 linhas para helpers/hooks e 100 linhas para componentes React com JSX.
+  - Hierarquia estrita do Atomic Design (átomos e moléculas não importam níveis superiores).
+  - Bloqueio de cores hexadecimais/rgb hardcoded (`lint:tokens`).
+  - Bloqueio de `console.log` e `debugger` residuais.
 - Exemplo incorreto: `<div className="bg-[#7C3AED] text-black">` ❌
 - Exemplo correto: `<div className="bg-primary text-on-surface">` ou usando classes mapeadas para as variáveis CSS ✅
 

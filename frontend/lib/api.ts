@@ -1,101 +1,18 @@
+import type {
+  User,
+  Servico,
+  Profissional,
+  Cliente,
+  FormulaQuimica,
+  Agendamento,
+  ConfiguracaoAtelie,
+} from './types';
+import { extractApiErrorMessage } from './errors';
+
+export * from './types';
+export { extractApiErrorMessage } from './errors';
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
-
-export interface User {
-  id: number;
-  email: string;
-  nome: string;
-  perfil: 'admin' | 'profissional';
-  telefone?: string;
-  deve_redefinir_senha: boolean;
-  is_staff: boolean;
-  is_active: boolean;
-}
-
-export interface Servico {
-  id: number;
-  nome: string;
-  categoria: string;
-  descricao: string;
-  duracao_minutos: number;
-  preco: string | number;
-  ativo: boolean;
-}
-
-export interface Profissional {
-  id: number;
-  nome: string;
-  cargo: string;
-  cor_hex: string;
-  foto_url?: string;
-  servicos?: number[];
-  servicos_detalhes?: Servico[];
-  ativo: boolean;
-  usuario?: number | null;
-  email_usuario?: string | null;
-  possui_acesso?: boolean;
-}
-
-export interface FormulaQuimica {
-  id: number;
-  cliente: number;
-  nome_cliente?: string;
-  profissional?: number;
-  profissional_detalhes?: Profissional;
-  data_aplicacao: string;
-  procedimento: string;
-  formula_texto: string;
-  volumagem_ox: string;
-  tempo_pausa_minutos: number;
-  fundo_clareamento?: string;
-  observacoes?: string;
-  foto_resultado_url?: string;
-}
-
-export interface Cliente {
-  id: number;
-  nome: string;
-  telefone: string;
-  email?: string;
-  data_nascimento?: string;
-  signo?: string;
-  foto_url?: string;
-  tags?: string;
-  observacoes_alergias?: string;
-  preferencias_sensoriais?: string;
-  total_investido: string | number;
-  visitas_realizadas: number;
-  ultima_visita?: string;
-  formulas?: FormulaQuimica[];
-}
-
-export interface Agendamento {
-  id: number;
-  cliente: number;
-  cliente_detalhes?: Cliente;
-  profissional?: number | null;
-  profissional_detalhes?: Profissional | null;
-  servicos: number[];
-  servicos_detalhes?: Servico[];
-  data_hora_inicio: string;
-  data_hora_fim: string;
-  status: 'agendado' | 'confirmado' | 'em_atendimento' | 'concluido' | 'cancelado';
-  status_display?: string;
-  valor_total: string | number;
-  observacoes?: string;
-}
-
-export interface ConfiguracaoAtelie {
-  id: number;
-  nome_atelie: string;
-  slogan: string;
-  telefone: string;
-  email: string;
-  endereco: string;
-  horario_funcionamento: string;
-  template_confirmacao: string;
-  template_lembrete: string;
-  politica_cancelamento: string;
-}
 
 function getToken(): string | null {
   if (typeof window === 'undefined') return null;
@@ -140,10 +57,17 @@ async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise
   });
 
   if (!response.ok) {
-    let errorDetail = 'Erro na requisição';
+    let errorDetail = 'Erro na comunicação com o servidor. Tente novamente.';
     try {
-      const errorJson = await response.json();
-      errorDetail = errorJson.detail || errorJson.error || JSON.stringify(errorJson);
+      const text = await response.text();
+      try {
+        const errorJson = JSON.parse(text);
+        errorDetail = extractApiErrorMessage(errorJson);
+      } catch {
+        if (text && text.trim().length > 0 && text.length < 300 && !text.includes('<!DOCTYPE')) {
+          errorDetail = text.trim();
+        }
+      }
     } catch {
       // fallback
     }
@@ -191,22 +115,49 @@ export const api = {
   },
 
   esqueciSenha: (email: string) =>
-    fetchApi<{ message: string; dev_token?: string }>('/auth/esqueci-senha/', {
+    fetchApi<{ message: string }>('/auth/esqueci-senha/', {
       method: 'POST',
       body: JSON.stringify({ email }),
     }),
 
-  confirmarRedefinicaoSenha: (data: { email: string; token: string; nova_senha: string; confirmacao_senha: string }) =>
+  confirmarRedefinicaoSenha: (data: { email: string; codigo?: string; token?: string; nova_senha: string; confirmacao_senha: string }) =>
     fetchApi<{ message: string; token: string; user: User }>('/auth/confirmar-redefinicao/', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
 
   // Agendamentos
-  getAgendamentos: (params?: string) =>
-    fetchApi<{ count: number; results: Agendamento[] } | Agendamento[]>(`/agendamentos/${params ? `?${params}` : ''}`),
+  getAgendamentos: (params?: string | import('./types').AgendamentoQueryParams) => {
+    let query = '';
+    if (typeof params === 'string') {
+      query = params ? `?${params}` : '';
+    } else if (params && typeof params === 'object') {
+      const sp = new URLSearchParams();
+      if (params.filtro) sp.set('filtro', params.filtro);
+      if (params.search) sp.set('search', params.search);
+      if (params.page) sp.set('page', String(params.page));
+      if (params.page_size) sp.set('page_size', String(params.page_size));
+      const qs = sp.toString();
+      query = qs ? `?${qs}` : '';
+    }
+    return fetchApi<import('./types').PaginatedResponse<Agendamento>>(`/agendamentos/${query}`);
+  },
 
   getAgendamento: (id: number) => fetchApi<Agendamento>(`/agendamentos/${id}/`),
+
+  getConflitosAgendamento: (inicio: string, fim: string, excludeId?: number) =>
+    fetchApi<Agendamento[]>(
+      `/agendamentos/conflitos/?inicio=${encodeURIComponent(inicio)}&fim=${encodeURIComponent(fim)}${
+        excludeId ? `&exclude_id=${excludeId}` : ''
+      }`
+    ),
+
+  getAgendamentosClienteNoDia: (clienteId: number, data: string, excludeId?: number) =>
+    fetchApi<Agendamento[]>(
+      `/agendamentos/cliente-dia/?cliente_id=${clienteId}&data=${encodeURIComponent(data)}${
+        excludeId ? `&exclude_id=${excludeId}` : ''
+      }`
+    ),
 
   createAgendamento: (data: Partial<Agendamento>) =>
     fetchApi<Agendamento>('/agendamentos/', {
@@ -218,6 +169,11 @@ export const api = {
     fetchApi<Agendamento>(`/agendamentos/${id}/`, {
       method: 'PATCH',
       body: JSON.stringify(data),
+    }),
+
+  deleteAgendamento: (id: number) =>
+    fetchApi(`/agendamentos/${id}/`, {
+      method: 'DELETE',
     }),
 
   gerarLinkWhatsapp: (id: number) =>
@@ -233,6 +189,26 @@ export const api = {
 
   confirmarWhatsapp: (id: number) =>
     fetchApi<{ message: string; agendamento: Agendamento }>(`/agendamentos/${id}/confirmar-whatsapp/`, {
+      method: 'POST',
+    }),
+
+  iniciarAgendamento: (id: number) =>
+    fetchApi<Agendamento>(`/agendamentos/${id}/iniciar/`, {
+      method: 'POST',
+    }),
+
+  concluirAgendamento: (id: number) =>
+    fetchApi<Agendamento>(`/agendamentos/${id}/concluir/`, {
+      method: 'POST',
+    }),
+
+  marcarNaoCompareceuAgendamento: (id: number) =>
+    fetchApi<Agendamento>(`/agendamentos/${id}/nao-compareceu/`, {
+      method: 'POST',
+    }),
+
+  cancelarAgendamento: (id: number) =>
+    fetchApi<Agendamento>(`/agendamentos/${id}/cancelar/`, {
       method: 'POST',
     }),
 
@@ -296,8 +272,24 @@ export const api = {
       body: JSON.stringify(data),
     }),
 
+  deleteProfissional: (id: number) =>
+    fetchApi<{ message: string; soft_deleted: boolean; profissional?: Profissional }>(`/profissionais/${id}/`, {
+      method: 'DELETE',
+    }),
+
+  toggleAtivoProfissional: (id: number, ativo?: boolean) =>
+    fetchApi<{ message: string; profissional: Profissional }>(`/profissionais/${id}/toggle-ativo/`, {
+      method: 'POST',
+      body: JSON.stringify(ativo !== undefined ? { ativo } : {}),
+    }),
+
+  resetarSenhaProfissional: (id: number) =>
+    fetchApi<{ message: string; profissional: Profissional }>(`/profissionais/${id}/resetar-senha/`, {
+      method: 'POST',
+    }),
+
   criarAcessoProfissional: (id: number, email: string, perfil: 'admin' | 'profissional' = 'profissional') =>
-    fetchApi<{ message: string; email: string; senha_temp?: string }>(`/profissionais/${id}/criar-acesso/`, {
+    fetchApi<{ message: string; email: string; profissional: Profissional }>(`/profissionais/${id}/criar-acesso/`, {
       method: 'POST',
       body: JSON.stringify({ email, perfil }),
     }),
@@ -312,6 +304,17 @@ export const api = {
     fetchApi<FormulaQuimica>('/formulas/', {
       method: 'POST',
       body: JSON.stringify(data),
+    }),
+
+  updateFormula: (id: number, data: Partial<FormulaQuimica>) =>
+    fetchApi<FormulaQuimica>(`/formulas/${id}/`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }),
+
+  deleteFormula: (id: number) =>
+    fetchApi(`/formulas/${id}/`, {
+      method: 'DELETE',
     }),
 
   // Configurações

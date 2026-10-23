@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 from apps.clientes.models import Cliente
 from apps.equipe.models import Profissional
 from apps.servicos.models import Servico
@@ -11,6 +12,7 @@ class Agendamento(models.Model):
         ('em_atendimento', 'Em Atendimento'),
         ('concluido', 'Finalizado'),
         ('cancelado', 'Cancelado'),
+        ('nao_compareceu', 'Não Compareceu'),
     )
 
     cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE, related_name='agendamentos', verbose_name='Cliente')
@@ -41,3 +43,37 @@ class Agendamento(models.Model):
     def __str__(self):
         prof_nome = self.profissional.nome if self.profissional else 'Equipe Camilo Studio'
         return f"{self.cliente.nome} com {prof_nome} ({self.data_hora_inicio.strftime('%d/%m/%Y %H:%M')})"
+
+    @property
+    def indicador_temporal(self):
+        agora = timezone.now()
+        if self.status in ['concluido', 'cancelado', 'nao_compareceu']:
+            return 'encerrado'
+        if self.status == 'em_atendimento':
+            return 'tempo_excedido' if agora > self.data_hora_fim else 'em_andamento'
+        if agora < self.data_hora_inicio:
+            diff = (self.data_hora_inicio - agora).total_seconds() / 60
+            return 'prestes_a_iniciar' if diff <= 30 else 'futuro'
+        return 'atrasado'
+
+    @property
+    def tempo_relativo_display(self):
+        agora = timezone.now()
+        if self.status in ['concluido', 'cancelado', 'nao_compareceu']:
+            return self.get_status_display()
+        if self.status == 'em_atendimento':
+            if agora > self.data_hora_fim:
+                mins = int((agora - self.data_hora_fim).total_seconds() // 60)
+                return f"Tempo excedido em {mins} min"
+            decorrido = int((agora - self.data_hora_inicio).total_seconds() // 60)
+            return f"Em andamento há {max(0, decorrido)} min"
+        if agora < self.data_hora_inicio:
+            diff = int((self.data_hora_inicio - agora).total_seconds() // 60)
+            if diff < 60:
+                return f"Começa em {diff} min"
+            horas = diff // 60
+            restante_m = diff % 60
+            return f"Começa em {horas}h {restante_m}min" if restante_m else f"Começa em {horas}h"
+        atraso = int((agora - self.data_hora_inicio).total_seconds() // 60)
+        return f"Aguardando início • atrasado {atraso} min"
+

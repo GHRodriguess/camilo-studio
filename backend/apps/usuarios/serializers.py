@@ -21,8 +21,18 @@ class UsuarioSerializer(serializers.ModelSerializer):
 
 
 class LoginSerializer(serializers.Serializer):
-    email = serializers.EmailField()
-    password = serializers.CharField(write_only=True)
+    email = serializers.EmailField(error_messages={
+        'invalid': 'Informe um endereço de e-mail válido.',
+        'blank': 'Informe o seu e-mail.',
+        'required': 'Informe o seu e-mail.',
+    })
+    password = serializers.CharField(
+        write_only=True,
+        error_messages={
+            'blank': 'Informe a sua senha.',
+            'required': 'Informe a sua senha.',
+        }
+    )
 
     def validate(self, attrs):
         email = attrs.get('email')
@@ -55,11 +65,16 @@ class EsqueciSenhaSerializer(serializers.Serializer):
 
 class ConfirmarRedefinicaoSenhaSerializer(serializers.Serializer):
     email = serializers.EmailField()
-    token = serializers.CharField()
+    codigo = serializers.CharField(max_length=20, required=False)
+    token = serializers.CharField(required=False)
     nova_senha = serializers.CharField(min_length=6, write_only=True)
     confirmacao_senha = serializers.CharField(min_length=6, write_only=True)
 
     def validate(self, attrs):
+        codigo = attrs.get('codigo') or attrs.get('token')
+        if not codigo:
+            raise serializers.ValidationError({'codigo': 'O código de validação é obrigatório.'})
+        attrs['codigo_final'] = codigo.strip()
         if attrs['nova_senha'] != attrs['confirmacao_senha']:
             raise serializers.ValidationError({'confirmacao_senha': 'As senhas digitadas não coincidem.'})
         return attrs

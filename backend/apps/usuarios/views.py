@@ -74,36 +74,33 @@ class EsqueciSenhaView(views.APIView):
     def post(self, request):
         serializer = EsqueciSenhaSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        email = serializer.validated_data['email']
+        email = serializer.validated_data['email'].strip().lower()
 
         try:
-            user = Usuario.objects.get(email=email, is_active=True)
-            token = default_token_generator.make_token(user)
-            # Enviar e-mail
-            assunto = 'Recuperação de Senha — Camilo Studio'
-            mensagem = (
-                f"Olá, {user.nome}!\n\n"
-                f"Recebemos uma solicitação de redefinição de senha para a sua conta no Camilo Studio.\n"
-                f"Use o token abaixo ou o link de recuperação para definir uma nova senha:\n\n"
-                f"Token: {token}\n"
-                f"E-mail: {user.email}\n\n"
-                f"Se você não solicitou esta alteração, ignore esta mensagem com segurança."
+            user = Usuario.objects.get(email__iexact=email, is_active=True)
+            import secrets
+            codigo_num = f"{secrets.randbelow(900000) + 100000}"
+
+            # Invalida códigos anteriores não utilizados
+            from .models import CodigoRedefinicaoSenha
+            CodigoRedefinicaoSenha.objects.filter(email__iexact=email, utilizado=False).update(utilizado=True)
+            CodigoRedefinicaoSenha.objects.create(email=user.email, codigo=codigo_num)
+
+            # Enviar e-mail editorial com código em destaque e link
+            from camilo_core.email_services import enviar_email_codigo_recuperacao
+            enviar_email_codigo_recuperacao(
+                nome=user.nome,
+                email_destino=user.email,
+                codigo=codigo_num,
             )
-            send_mail(
-                assunto,
-                mensagem,
-                settings.DEFAULT_FROM_EMAIL,
-                [user.email],
-                fail_silently=True,
-            )
+
             return Response({
-                'message': 'Se o e-mail estiver cadastrado, as instruções foram enviadas.',
-                'dev_token': token if settings.DEBUG else None,
+                'message': 'Se o e-mail estiver cadastrado, as instruções e o código foram enviados.',
             }, status=status.HTTP_200_OK)
         except Usuario.DoesNotExist:
-            # Resposta neutra para segurança
+            # Resposta neutra para segurança contra enumeração de usuários
             return Response({
-                'message': 'Se o e-mail estiver cadastrado, as instruções foram enviadas.',
+                'message': 'Se o e-mail estiver cadastrado, as instruções e o código foram enviados.',
             }, status=status.HTTP_200_OK)
 
 
@@ -114,17 +111,27 @@ class ConfirmarRedefinicaoSenhaView(views.APIView):
         serializer = ConfirmarRedefinicaoSenhaSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        email = serializer.validated_data['email']
-        token = serializer.validated_data['token']
+        email = serializer.validated_data['email'].strip().lower()
+        codigo = serializer.validated_data['codigo_final']
         nova_senha = serializer.validated_data['nova_senha']
 
+        from .models import CodigoRedefinicaoSenha
+        codigo_obj = CodigoRedefinicaoSenha.objects.filter(
+            email__iexact=email,
+            codigo=codigo,
+            utilizado=False
+        ).order_by('-criado_em').first()
+
+        if not codigo_obj or not codigo_obj.is_valido():
+            return Response(
+                {'error': 'Código inválido ou expirado. Códigos têm validade de 15 minutos.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         try:
-            user = Usuario.objects.get(email=email, is_active=True)
-            if not default_token_generator.check_token(user, token):
-                return Response(
-                    {'error': 'Token inválido ou expirado. Solicite uma nova redefinição.'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+            user = Usuario.objects.get(email__iexact=email, is_active=True)
+            codigo_obj.utilizado = True
+            codigo_obj.save()
 
             user.set_password(nova_senha)
             user.deve_redefinir_senha = False
@@ -139,7 +146,7 @@ class ConfirmarRedefinicaoSenhaView(views.APIView):
                 'user': UsuarioSerializer(user).data,
             }, status=status.HTTP_200_OK)
         except Usuario.DoesNotExist:
-            return Response({'error': 'Usuário não encontrado.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Usuário associado ao código não encontrado ou inativo.'}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class UsuarioViewSet(viewsets.ModelViewSet):

@@ -45,6 +45,9 @@ source venv/bin/activate  # No Windows: venv\Scripts\activate
 # Instalar dependências
 pip install -r requirements.txt
 
+# Configurar variáveis de ambiente (e-mail, segredos e frontend)
+cp .env.example .env
+
 # Executar migrações do banco de dados (SQLite)
 python manage.py migrate
 

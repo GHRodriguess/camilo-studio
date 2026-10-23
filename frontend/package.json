@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint && npm run test:structure",
+    "test:structure": "node scripts/check-structure.mjs",
+    "test": "npm run test:structure"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
